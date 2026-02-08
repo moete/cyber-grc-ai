@@ -1,0 +1,65 @@
+{
+  "settings": {
+    "development_environment": {
+      "stack": ["React", "TypeScript", "Vite", "AdonisJS", "PostgreSQL", "pnpm", "Docker"],
+      "architecture": "Monorepo",
+      "packages": ["frontend", "backend", "shared", "ai-service"]
+    },
+    "security": {
+      "CSRF": "Use SameSite cookies and secure headers to mitigate CSRF attacks. Token-based authentication with JWT should be used for session management.",
+      "XSS": "Sanitize inputs and outputs. Use libraries like DOMPurify for rendering user input safely (e.g., Markdown in notes).",
+      "rate_limiting": "Apply rate limiting on authentication and AI API endpoints using packages like 'express-rate-limit'.",
+      "secret_management": "Store secrets in environment variables, validate on startup, and use key rotation mechanisms for API keys.",
+      "headers": {
+        "CSP": "Implement a strict Content Security Policy header to mitigate script injections.",
+        "HSTS": "Enforce HTTPS by using the HTTP Strict Transport Security header.",
+        "X-Frame-Options": "Prevent clickjacking by disallowing embedding the app in iframes."
+      },
+      "row_level_security": "Use PostgreSQL policies and AdonisJS middleware for multi-tenant isolation at the database and application level."
+    }
+  },
+  "best_practices": {
+    "architecture": {
+      "modular_structure": "Adopt a modular structure in the Monorepo, separating frontend, backend, shared types, and AI services.",
+      "reuse_components": "Create reusable and isolated React components to promote maintainability and prevent duplication.",
+      "API_design": "Design RESTful APIs with proper validation and error handling. Use AdonisJS controllers and models to manage the business logic.",
+      "authorization": "Apply RBAC consistently in the backend using middleware, with scoping of data access per organization."
+    },
+    "code_quality": {
+      "clean_code": "Follow Clean Code principles: meaningful variable names, avoid duplication, small functions, single responsibility principle, and proper comments.",
+      "code_reviews": "Ensure code reviews are part of the process, focusing on maintainability, security, and performance.",
+      "testing": {
+        "unit_tests": "Write unit tests for critical functions like risk score calculations and permission checks.",
+        "integration_tests": "Test multi-tenant isolation to ensure users cannot access data from other organizations.",
+        "e2e_tests": "End-to-end tests to verify the complete user flow, from login to supplier creation and audit trail verification."
+      }
+    }
+  },
+  "security_guidelines": {
+    "jwt_security": {
+      "authentication": "Use JWT for session management with secure cookies. Ensure tokens are stored securely in HTTP-only cookies.",
+      "authorization": "Granular authorization checks should be performed to ensure the user has the right permissions for each resource.",
+      "token_expiration": "Set token expiration times and refresh tokens securely to minimize session hijacking risks."
+    },
+    "data_security": {
+      "input_validation": "Sanitize all inputs (e.g., Markdown notes) to prevent injection attacks.",
+      "audit_trail": "Ensure actions on suppliers are tracked with append-only logs in the audit trail table (PostgreSQL triggers or middleware)."
+    }
+  },
+  "pipeline_integration": {
+    "async_IA": {
+      "approach": "Use a job queue system like BullMQ for asynchronous AI risk score evaluation. Implement retry logic and handle timeouts gracefully.",
+      "caching": "Implement caching to avoid redundant requests and improve performance when fetching AI scores.",
+      "security": "Sanitize inputs and ensure safe interaction with external AI APIs. Store API keys in environment variables and rotate them regularly."
+    }
+  },
+  "devops": {
+    "dockerization": "Ensure the development, testing, and production environments are consistent by using Docker. Include Docker Compose for local development with PostgreSQL and Redis (if job queue is used).",
+    "ci_cd": "Implement continuous integration with linting, testing, security scans (npm audit), and deployment pipelines using GitHub Actions."
+  },
+  "documentation": {
+    "arch_documentation": "Document architectural decisions in ARCHITECTURE.md, covering RBAC, multi-tenant isolation, async IA, and separation of concerns.",
+    "security_documentation": "Document security choices and strategies in SECURITY.md, explaining measures taken for CSRF, XSS, rate limiting, and secret management.",
+    "installation": "Provide clear installation instructions in README.md. Include a one-click setup (docker-compose up or equivalent)."
+  }
+}

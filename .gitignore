@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Build outputs (root and workspaces: backend, shared)
+dist/
+build/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+pnpm-debug.log*
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE / editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Temp / cache
+tmp/
+.cache/
+.turbo/
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Misc
+*.pid
+*.local
