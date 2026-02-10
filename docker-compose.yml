@@ -1,0 +1,24 @@
+# PostgreSQL for local development.
+# From repo root: docker compose up -d
+# Backend .env: DB_HOST=localhost, DB_PORT=5432, DB_USER=postgres, DB_PASSWORD=postgres, DB_DATABASE=cyber_grc
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres-cyber-grc
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cyber_grc
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_cyber_grc_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_cyber_grc_data:

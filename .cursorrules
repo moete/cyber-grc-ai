@@ -61,5 +61,8 @@
     "arch_documentation": "Document architectural decisions in ARCHITECTURE.md, covering RBAC, multi-tenant isolation, async IA, and separation of concerns.",
     "security_documentation": "Document security choices and strategies in SECURITY.md, explaining measures taken for CSRF, XSS, rate limiting, and secret management.",
     "installation": "Provide clear installation instructions in README.md. Include a one-click setup (docker-compose up or equivalent)."
+  },
+  "git": {
+    "commit_author": "When running git commit in this repo, always use: git commit --author=\"Moetez Boubakri <moetez.bkr@outlook.com>\"."
   }
 }

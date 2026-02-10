@@ -2,6 +2,7 @@ import type { ColumnType, Generated } from 'kysely';
 
 export interface AuditLogTable {
   id: Generated<string>;
+  organization_id: string;
   user_id: string;
   action: string;
   entity_type: string;

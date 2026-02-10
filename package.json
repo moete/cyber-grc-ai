@@ -1,0 +1,8 @@
+{
+  "name": "cyber-grc",
+  "private": true,
+  "scripts": {},
+  "dependencies": {
+    "tslib": "^2.8.1"
+  }
+}
