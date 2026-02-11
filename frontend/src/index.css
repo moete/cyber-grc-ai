@@ -1,4 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind v4: https://tailwindcss.com/docs/v4 */
+@import "tailwindcss";
+
+/* Optional: customize theme via CSS variables
+@theme {
+  --font-sans: ...;
+  --color-primary: ...;
+}
+*/
 

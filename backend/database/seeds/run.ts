@@ -14,7 +14,7 @@
 import 'dotenv/config'
 import { sql } from 'kysely'
 import { createDb } from '../connection.js'
-import { hashPassword } from '@shared'
+import { hashPassword } from '@shared/functions/hash'
 
 async function seed() {
   // Seed runs as postgres superuser to bypass RLS

@@ -1,13 +1,24 @@
-import path from 'node:path'
-import { defineConfig } from 'vite'
+// https://vitejs.dev/config/
+import { resolve } from 'node:path'
 import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
 
-// https://vite.dev/config/
+function pathResolve(dir: string) {
+  return resolve(__dirname, '.', dir)
+}
+
 export default defineConfig({
   plugins: [react()],
+  envDir: './src/config',
+  cacheDir: '.vite',
+  build: {
+    outDir: '../../dist/packages/frontend',
+  },
   resolve: {
     alias: {
-      '@shared': path.resolve(__dirname, '../shared/src'),
+      '@': pathResolve('src'),
+      '@frontend': pathResolve('src'),
+      '@shared': pathResolve('../shared/src'),
     },
   },
 })

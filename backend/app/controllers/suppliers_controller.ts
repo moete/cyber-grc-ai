@@ -174,15 +174,28 @@ export default class SuppliersController {
 
   /**
    * PUT /api/suppliers/:id
+   * Full update: Owner, Admin (SUPPLIER_UPDATE).
+   * Partial update for Analyst: risk level only (RISK_LEVEL_UPDATE), notes only (NOTES_ADD).
    */
   async update({ auth, params, request, response }: HttpContext) {
-    // Fetch existing (org-scoped) for audit "before" state
     const existing = await scopedSelect('suppliers', auth.organizationId)
       .where('id', '=', params.id)
       .selectAll()
       .executeTakeFirst()
 
-    if (!existing || !assertAccess(auth, existing.organization_id, Permission.SUPPLIER_UPDATE)) {
+    if (!existing) {
+      return response.status(HttpStatusCode.NOT_FOUND).send({
+        success: false,
+        message: 'Supplier not found in your organization',
+        statusCode: HttpStatusCode.NOT_FOUND,
+      })
+    }
+
+    const hasFullUpdate = assertAccess(auth, existing.organization_id, Permission.SUPPLIER_UPDATE)
+    const canRiskLevel = assertAccess(auth, existing.organization_id, Permission.RISK_LEVEL_UPDATE)
+    const canNotes = assertAccess(auth, existing.organization_id, Permission.NOTES_ADD)
+
+    if (!hasFullUpdate && !canRiskLevel && !canNotes) {
       return response.status(HttpStatusCode.NOT_FOUND).send({
         success: false,
         message: 'Supplier not found in your organization',
@@ -192,27 +205,53 @@ export default class SuppliersController {
 
     const data = await request.validateUsing(updateSupplierValidator)
 
-    // Build update payload — only include fields that were sent
-    const updateValues: Record<string, any> = { updated_at: new Date() }
-    if (data.name !== undefined) updateValues.name = data.name
-    if (data.domain !== undefined) updateValues.domain = data.domain
-    if (data.category !== undefined) updateValues.category = data.category
-    if (data.riskLevel !== undefined) updateValues.risk_level = data.riskLevel
-    if (data.status !== undefined) updateValues.status = data.status
-    if (data.contractEndDate !== undefined) {
-      updateValues.contract_end_date = data.contractEndDate
-        ? new Date(data.contractEndDate)
-        : null
+    // Analyst can only change riskLevel and/or notes; other fields are ignored, not rejected
+    if (!hasFullUpdate) {
+      if (data.riskLevel !== undefined && !canRiskLevel) {
+        return response.status(HttpStatusCode.FORBIDDEN).send({
+          success: false,
+          message: 'Forbidden: you do not have permission to update risk level',
+          statusCode: HttpStatusCode.FORBIDDEN,
+        })
+      }
+      if (data.notes !== undefined && !canNotes) {
+        return response.status(HttpStatusCode.FORBIDDEN).send({
+          success: false,
+          message: 'Forbidden: you do not have permission to update notes',
+          statusCode: HttpStatusCode.FORBIDDEN,
+        })
+      }
     }
-    if (data.notes !== undefined) updateValues.notes = data.notes
+
+    const updateValues: Record<string, any> = { updated_at: new Date() }
+    if (hasFullUpdate) {
+      if (data.name !== undefined) updateValues.name = data.name
+      if (data.domain !== undefined) updateValues.domain = data.domain
+      if (data.category !== undefined) updateValues.category = data.category
+      if (data.riskLevel !== undefined) updateValues.risk_level = data.riskLevel
+      if (data.status !== undefined) updateValues.status = data.status
+      if (data.contractEndDate !== undefined) {
+        updateValues.contract_end_date = data.contractEndDate
+          ? new Date(data.contractEndDate)
+          : null
+      }
+      if (data.notes !== undefined) updateValues.notes = data.notes
+    } else {
+      if (canRiskLevel && data.riskLevel !== undefined) updateValues.risk_level = data.riskLevel
+      if (canNotes && data.notes !== undefined) updateValues.notes = data.notes
+    }
 
     const [updated] = await scopedUpdate('suppliers', auth.organizationId)
       .set({
         ...updateValues,
-        ai_status: AiAnalysisStatus.PENDING,
-        ai_last_requested_at: new Date(),
-        ai_last_completed_at: null,
-        ai_error: null,
+        ...(hasFullUpdate
+          ? {
+              ai_status: AiAnalysisStatus.PENDING,
+              ai_last_requested_at: new Date(),
+              ai_last_completed_at: null,
+              ai_error: null,
+            }
+          : {}),
       })
       .where('id', '=', params.id)
       .returningAll()

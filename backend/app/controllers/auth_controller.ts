@@ -2,7 +2,8 @@ import type { HttpContext } from '@adonisjs/core/http'
 import jwt, { type SignOptions } from 'jsonwebtoken'
 import env from '#start/env'
 import db from '#services/db'
-import { verifyPassword, HttpStatusCode, type IJwtPayload, type Roles } from '@shared'
+import { verifyPassword } from '@shared/functions/hash'
+import { HttpStatusCode, type IJwtPayload, type Roles } from '@shared'
 import { loginValidator } from '#validators/auth_validator'
 
 export default class AuthController {

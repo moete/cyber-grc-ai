@@ -57,7 +57,13 @@ router
 
     router
       .put('/suppliers/:id', [SuppliersController, 'update'])
-      .use(middleware.rbac({ permission: Permission.SUPPLIER_UPDATE }))
+      .use(middleware.rbac({
+        anyOf: [
+          Permission.SUPPLIER_UPDATE,
+          Permission.RISK_LEVEL_UPDATE,
+          Permission.NOTES_ADD,
+        ],
+      }))
 
     router
       .delete('/suppliers/:id', [SuppliersController, 'destroy'])
