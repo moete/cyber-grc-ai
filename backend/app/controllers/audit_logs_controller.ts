@@ -1,5 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import db from '#services/db'
+import { scopedSelect } from '#services/scoped_query'
 import { HttpStatusCode } from 'shared'
 
 export default class AuditLogsController {
@@ -21,9 +21,7 @@ export default class AuditLogsController {
     const limit = Math.min(100, Math.max(1, Number(qs.limit) || 20))
     const offset = (page - 1) * limit
 
-    let query = db
-      .selectFrom('audit_logs')
-      .where('organization_id', '=', auth.organizationId)
+    let query = scopedSelect('audit_logs', auth.organizationId)
 
     // Filters
     if (qs.entityType) {
@@ -81,10 +79,8 @@ export default class AuditLogsController {
    * GET /api/audit-logs/:id
    */
   async show({ auth, params, response }: HttpContext) {
-    const log = await db
-      .selectFrom('audit_logs')
+    const log = await scopedSelect('audit_logs', auth.organizationId)
       .where('id', '=', params.id)
-      .where('organization_id', '=', auth.organizationId)
       .selectAll()
       .executeTakeFirst()
 

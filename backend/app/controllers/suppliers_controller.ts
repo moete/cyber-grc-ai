@@ -1,8 +1,15 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import db from '#services/db'
 import { logAudit } from '#services/audit_service'
+import { scopedSelect, scopedUpdate, scopedDelete, scopedInsert } from '#services/scoped_query'
 import { createSupplierValidator, updateSupplierValidator } from '#validators/supplier_validator'
-import { AuditAction, ENTITY_TYPES, HttpStatusCode, type ISupplier } from 'shared'
+import {
+  AuditAction,
+  canAccessResource,
+  ENTITY_TYPES,
+  HttpStatusCode,
+  Permission,
+  type ISupplier,
+} from 'shared'
 
 /**
  * Map camelCase sort param from the API to snake_case DB column names.
@@ -20,6 +27,20 @@ const SORT_COLUMN_MAP: Record<string, string> = {
   aiRiskScore: 'ai_risk_score',
 }
 
+/**
+ * Defense-in-depth: verify the loaded resource belongs to the user's org
+ * AND the user has the required permission. Uses canAccessResource from shared.
+ *
+ * The scoped query is the primary filter; this is the application-level safety net.
+ */
+function assertAccess(
+  auth: HttpContext['auth'],
+  resourceOrgId: string,
+  permission: Permission
+): boolean {
+  return canAccessResource(auth.role, auth.organizationId, resourceOrgId, permission)
+}
+
 export default class SuppliersController {
   /**
    * GET /api/suppliers
@@ -31,9 +52,7 @@ export default class SuppliersController {
     const limit = Math.min(100, Math.max(1, Number(qs.limit) || 10))
     const offset = (page - 1) * limit
 
-    let query = db
-      .selectFrom('suppliers')
-      .where('organization_id', '=', auth.organizationId)
+    let query = scopedSelect('suppliers', auth.organizationId)
 
     // Filters
     if (qs.name) {
@@ -81,14 +100,12 @@ export default class SuppliersController {
    * GET /api/suppliers/:id
    */
   async show({ auth, params, response }: HttpContext) {
-    const supplier = await db
-      .selectFrom('suppliers')
+    const supplier = await scopedSelect('suppliers', auth.organizationId)
       .where('id', '=', params.id)
-      .where('organization_id', '=', auth.organizationId)
       .selectAll()
       .executeTakeFirst()
 
-    if (!supplier) {
+    if (!supplier || !assertAccess(auth, supplier.organization_id, Permission.SUPPLIER_READ)) {
       return response.status(HttpStatusCode.NOT_FOUND).send({
         success: false,
         message: 'Supplier not found in your organization',
@@ -108,8 +125,7 @@ export default class SuppliersController {
   async store({ auth, request, response }: HttpContext) {
     const data = await request.validateUsing(createSupplierValidator)
 
-    const [supplier] = await db
-      .insertInto('suppliers')
+    const [supplier] = await scopedInsert('suppliers')
       .values({
         organization_id: auth.organizationId,
         name: data.name,
@@ -146,14 +162,12 @@ export default class SuppliersController {
    */
   async update({ auth, params, request, response }: HttpContext) {
     // Fetch existing (org-scoped) for audit "before" state
-    const existing = await db
-      .selectFrom('suppliers')
+    const existing = await scopedSelect('suppliers', auth.organizationId)
       .where('id', '=', params.id)
-      .where('organization_id', '=', auth.organizationId)
       .selectAll()
       .executeTakeFirst()
 
-    if (!existing) {
+    if (!existing || !assertAccess(auth, existing.organization_id, Permission.SUPPLIER_UPDATE)) {
       return response.status(HttpStatusCode.NOT_FOUND).send({
         success: false,
         message: 'Supplier not found in your organization',
@@ -177,11 +191,9 @@ export default class SuppliersController {
     }
     if (data.notes !== undefined) updateValues.notes = data.notes
 
-    const [updated] = await db
-      .updateTable('suppliers')
+    const [updated] = await scopedUpdate('suppliers', auth.organizationId)
       .set(updateValues)
       .where('id', '=', params.id)
-      .where('organization_id', '=', auth.organizationId)
       .returningAll()
       .execute()
 
@@ -207,14 +219,12 @@ export default class SuppliersController {
    * DELETE /api/suppliers/:id
    */
   async destroy({ auth, params, request, response }: HttpContext) {
-    const existing = await db
-      .selectFrom('suppliers')
+    const existing = await scopedSelect('suppliers', auth.organizationId)
       .where('id', '=', params.id)
-      .where('organization_id', '=', auth.organizationId)
       .selectAll()
       .executeTakeFirst()
 
-    if (!existing) {
+    if (!existing || !assertAccess(auth, existing.organization_id, Permission.SUPPLIER_DELETE)) {
       return response.status(HttpStatusCode.NOT_FOUND).send({
         success: false,
         message: 'Supplier not found in your organization',
@@ -222,10 +232,8 @@ export default class SuppliersController {
       })
     }
 
-    await db
-      .deleteFrom('suppliers')
+    await scopedDelete('suppliers', auth.organizationId)
       .where('id', '=', params.id)
-      .where('organization_id', '=', auth.organizationId)
       .execute()
 
     // Audit trail
