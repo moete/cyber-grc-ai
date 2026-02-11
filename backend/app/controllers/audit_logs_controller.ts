@@ -1,6 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { scopedSelect } from '#services/scoped_query'
-import { HttpStatusCode } from 'shared'
+import { HttpStatusCode } from '@shared'
 
 export default class AuditLogsController {
   /**

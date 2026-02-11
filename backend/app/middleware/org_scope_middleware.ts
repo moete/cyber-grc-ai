@@ -2,7 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
 import { sql } from 'kysely'
 import db from '#services/db'
-import { HttpStatusCode } from 'shared'
+import { HttpStatusCode } from '@shared'
 
 /**
  * Organization-scope middleware — sets the PostgreSQL session variable

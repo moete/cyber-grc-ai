@@ -12,8 +12,9 @@
  *   tsx database/seeds/run.ts
  */
 import 'dotenv/config'
+import { sql } from 'kysely'
 import { createDb } from '../connection.js'
-import { hashPassword } from '../../app/services/hash.js'
+import { hashPassword } from '@shared'
 
 async function seed() {
   // Seed runs as postgres superuser to bypass RLS
@@ -22,10 +23,15 @@ async function seed() {
   console.log('Seeding database...\n')
 
   // ── Clean existing data (idempotent re-runs) ───────────────
-  await db.deleteFrom('audit_logs').execute()
-  await db.deleteFrom('suppliers').execute()
-  await db.deleteFrom('users').execute()
-  await db.deleteFrom('organisations').execute()
+  // audit_logs has rules and FKs to organisations/users. To avoid
+  // referential integrity errors, we truncate ALL related tables
+  // in a single statement with CASCADE.
+  await db.executeQuery(
+    sql`
+      TRUNCATE TABLE audit_logs, suppliers, users, organisations
+      RESTART IDENTITY CASCADE
+    `.compile(db)
+  )
 
   // ── Organisations ──────────────────────────────────────────
   const [orgA, orgB] = await db

@@ -1,7 +1,7 @@
 import { Kysely, PostgresDialect } from 'kysely'
 import pg from 'pg'
 import env from '#start/env'
-import type { Database } from 'shared'
+import type { Database } from '@shared'
 
 /**
  * Singleton Kysely instance for the AdonisJS application.

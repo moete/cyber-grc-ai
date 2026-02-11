@@ -4,7 +4,7 @@ import {
   canAccessResource,
   Permission,
   Roles,
-} from 'shared'
+} from '@shared'
 
 test.group('RBAC permissions', () => {
   test('Owner has all permissions', ({ assert }) => {

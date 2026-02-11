@@ -39,6 +39,14 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   /*
   |----------------------------------------------------------
+  | Redis (for BullMQ AI queue)
+  |----------------------------------------------------------
+  */
+  REDIS_HOST: Env.schema.string.optional(),
+  REDIS_PORT: Env.schema.number.optional(),
+
+  /*
+  |----------------------------------------------------------
   | Application
   |----------------------------------------------------------
   */

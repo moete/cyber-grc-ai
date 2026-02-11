@@ -1,6 +1,6 @@
 import app from '@adonisjs/core/services/app'
 import { HttpContext, ExceptionHandler } from '@adonisjs/core/http'
-import { HttpStatusCode } from 'shared'
+import { HttpStatusCode } from '@shared'
 
 export default class HttpExceptionHandler extends ExceptionHandler {
   /**

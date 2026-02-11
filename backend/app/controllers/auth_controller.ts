@@ -4,8 +4,8 @@ import env from '#start/env'
 import db from '#services/db'
 import { verifyPassword } from '#services/hash'
 import { loginValidator } from '#validators/auth_validator'
-import type { IJwtPayload, Roles } from 'shared'
-import { HttpStatusCode } from 'shared'
+import type { IJwtPayload, Roles } from '@shared'
+import { HttpStatusCode } from '@shared'
 
 export default class AuthController {
   /**

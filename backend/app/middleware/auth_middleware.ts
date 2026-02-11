@@ -3,8 +3,8 @@ import type { NextFn } from '@adonisjs/core/types/http'
 import jwt from 'jsonwebtoken'
 import env from '#start/env'
 import db from '#services/db'
-import type { IJwtPayload } from 'shared'
-import { HttpStatusCode, type Roles } from 'shared'
+import type { IJwtPayload } from '@shared'
+import { HttpStatusCode, type Roles } from '@shared'
 
 /**
  * Auth state attached to HttpContext after successful JWT verification.

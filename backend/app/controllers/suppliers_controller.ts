@@ -1,15 +1,20 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { logAudit } from '#services/audit_service'
+import { enqueueAiJob } from '#services/ai_queue'
 import { scopedSelect, scopedUpdate, scopedDelete, scopedInsert } from '#services/scoped_query'
 import { createSupplierValidator, updateSupplierValidator } from '#validators/supplier_validator'
 import {
+  AiAnalysisStatus,
   AuditAction,
   canAccessResource,
+  Category,
   ENTITY_TYPES,
   HttpStatusCode,
   Permission,
+  RiskLevel,
+  Status,
   type ISupplier,
-} from 'shared'
+} from '@shared'
 
 /**
  * Map camelCase sort param from the API to snake_case DB column names.
@@ -130,14 +135,24 @@ export default class SuppliersController {
         organization_id: auth.organizationId,
         name: data.name,
         domain: data.domain,
-        category: data.category,
-        risk_level: data.riskLevel ?? 'Medium',
-        status: data.status ?? 'Active',
-        contract_end_date: data.contractEndDate ? new Date(data.contractEndDate) : null,
+        category: (data.category ?? Category.OTHER) as Category,
+        risk_level: (data.riskLevel ?? RiskLevel.LOW) as RiskLevel,
+        status: (data.status ?? Status.INACTIVE) as Status,
+        contract_end_date: data.contractEndDate ? new Date(data.contractEndDate) : null as Date | null,
         notes: data.notes ?? null,
+        ai_status: AiAnalysisStatus.PENDING,
+        ai_last_requested_at: new Date(),
+        ai_last_completed_at: null,
+        ai_error: null,
       })
       .returningAll()
       .execute()
+
+    // Enqueue AI analysis job (async pipeline)
+    await enqueueAiJob({
+      supplierId: supplier.id,
+      organizationId: auth.organizationId,
+    })
 
     // Audit trail
     await logAudit({
@@ -192,7 +207,13 @@ export default class SuppliersController {
     if (data.notes !== undefined) updateValues.notes = data.notes
 
     const [updated] = await scopedUpdate('suppliers', auth.organizationId)
-      .set(updateValues)
+      .set({
+        ...updateValues,
+        ai_status: AiAnalysisStatus.PENDING,
+        ai_last_requested_at: new Date(),
+        ai_last_completed_at: null,
+        ai_error: null,
+      })
       .where('id', '=', params.id)
       .returningAll()
       .execute()
@@ -271,7 +292,12 @@ function toSupplierResponse(row: any): ISupplier {
     notes: row.notes,
     aiRiskScore: row.ai_risk_score,
     aiAnalysis: row.ai_analysis,
+    aiStatus: row.ai_status ?? null,
+    aiLastRequestedAt: row.ai_last_requested_at ?? null,
+    aiLastCompletedAt: row.ai_last_completed_at ?? null,
+    aiError: row.ai_error ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
 }
+

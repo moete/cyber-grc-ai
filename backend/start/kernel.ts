@@ -10,6 +10,7 @@
 
 import router from '@adonisjs/core/services/router'
 import server from '@adonisjs/core/services/server'
+import '#services/ai_queue'
 
 /**
  * The error handler is used to convert an exception

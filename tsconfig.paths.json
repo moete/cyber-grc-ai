@@ -2,9 +2,18 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "App/*": ["./backend/src/app/*"],
       "@shared": ["./shared/src"],
-      "@shared/*": ["./shared/src/*"]
+      "@shared/*": ["./shared/src/*"],
+      "@frontend/*": ["./frontend/src/*"],
+      "@backend/*": ["./backend/src/*"],
+      "@ai-service/*": ["./ai-service/src/*"],
+      "#start/*": ["./backend/start/*"],
+      "#services/*": ["./backend/app/services/*"],
+      "#controllers/*": ["./backend/app/controllers/*"],
+      "#middleware/*": ["./backend/app/middleware/*"],
+      "#validators/*": ["./backend/app/validators/*"],
+      "#exceptions/*": ["./backend/app/exceptions/*"],
+      "#database/*": ["./backend/database/*"]
     }
   }
 }

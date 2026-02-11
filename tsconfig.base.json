@@ -1,7 +1,9 @@
 {
   "extends": "./tsconfig.paths.json",
+  "compilerOnSave": false,
   "compilerOptions": {
     "rootDir": ".",
+    "baseUrl": ".",
     "outDir": "dist",
     "esModuleInterop": true,
     "moduleResolution": "node",
@@ -11,7 +13,10 @@
     "importHelpers": true,
     "target": "es2015",
     "module": "esnext",
-    "lib": ["ESNEXT", "ES2015"],
+    "lib": [
+      "ESNEXT",
+      "dom"
+    ],
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
@@ -35,5 +40,42 @@
     "noFallthroughCasesInSwitch": true,
     "downlevelIteration": true
   },
-  "exclude": ["node_modules", "dist"]
+  "exclude": [
+    "node_modules",
+    "dist"
+  ],
+  /* "baseUrl": ".",
+  "paths": {
+    "App/*": [
+      "./backend/src/app/*"
+    ],
+    "@shared": [
+      "./shared/src"
+    ],
+    "@shared/*": [
+      "./shared/src/*"
+    ],
+    "#controllers/*": [
+      "./backend/app/controllers/*"
+    ],
+    "#exceptions/*": [
+      "./backend/app/exceptions/*"
+    ],
+    "#middleware/*": [
+      "./backend/app/middleware/*"
+    ],
+    "#services/*": [
+      "./backend/app/services/*"
+    ],
+    "#validators/*": [
+      "./backend/app/validators/*"
+    ],
+    "#start/*": [
+      "./backend/start/*"
+    ],
+    "#database/*": [
+      "./backend/database/*"
+    ]
+  }
+      */
 }

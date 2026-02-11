@@ -14,7 +14,7 @@
 
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
-import { Permission } from 'shared'
+import { Permission } from '@shared'
 
 // Lazy-load controllers (AdonisJS v6 pattern — tree-shakeable)
 const AuthController = () => import('#controllers/auth_controller')

@@ -1,6 +1,5 @@
 import db from '#services/db'
-import type { AuditAction } from 'shared'
-import type { EntityType } from 'shared'
+import type { AuditAction, EntityType } from '@shared'
 
 interface AuditLogEntry {
   organizationId: string

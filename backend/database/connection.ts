@@ -7,7 +7,7 @@
 import 'dotenv/config'
 import { Kysely, PostgresDialect } from 'kysely'
 import pg from 'pg'
-import type { Database } from 'shared'
+import type { Database } from '@shared'
 
 export function createDb(overrides?: Partial<pg.PoolConfig>): Kysely<Database> {
   return new Kysely<Database>({
