@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 import env from '#start/env'
 import db from '#services/db'
 import type { IJwtPayload } from 'shared'
-import { type Roles } from 'shared'
+import { HttpStatusCode, type Roles } from 'shared'
 
 /**
  * Auth state attached to HttpContext after successful JWT verification.
@@ -32,10 +32,10 @@ export default class AuthMiddleware {
   async handle(ctx: HttpContext, next: NextFn) {
     const authHeader = ctx.request.header('authorization')
     if (!authHeader?.startsWith('Bearer ')) {
-      ctx.response.status(401).send({
+      ctx.response.status(HttpStatusCode.UNAUTHORIZED).send({
         success: false,
         message: 'Missing or invalid authorization header',
-        statusCode: 401,
+        statusCode: HttpStatusCode.UNAUTHORIZED,
       })
       return
     }
@@ -46,10 +46,10 @@ export default class AuthMiddleware {
     try {
       payload = jwt.verify(token, env.get('JWT_SECRET')) as IJwtPayload
     } catch {
-      ctx.response.status(401).send({
+      ctx.response.status(HttpStatusCode.UNAUTHORIZED).send({
         success: false,
         message: 'Invalid or expired token',
-        statusCode: 401,
+        statusCode: HttpStatusCode.UNAUTHORIZED,
       })
       return
     }
@@ -64,10 +64,10 @@ export default class AuthMiddleware {
       .executeTakeFirst()
 
     if (!user) {
-      ctx.response.status(401).send({
+      ctx.response.status(HttpStatusCode.UNAUTHORIZED).send({
         success: false,
         message: 'User not found or deactivated',
-        statusCode: 401,
+        statusCode: HttpStatusCode.UNAUTHORIZED,
       })
       return
     }

@@ -1,6 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
-import { hasPermission, type Permission } from 'shared'
+import { hasPermission, HttpStatusCode, type Permission } from 'shared'
 
 /**
  * RBAC middleware — checks that the authenticated user's role
@@ -19,19 +19,19 @@ export default class RbacMiddleware {
     options: { permission: Permission }
   ) {
     if (!ctx.auth) {
-      ctx.response.status(401).send({
+      ctx.response.status(HttpStatusCode.UNAUTHORIZED).send({
         success: false,
         message: 'Authentication required',
-        statusCode: 401,
+        statusCode: HttpStatusCode.UNAUTHORIZED,
       })
       return
     }
 
     if (!hasPermission(ctx.auth.role, options.permission)) {
-      ctx.response.status(403).send({
+      ctx.response.status(HttpStatusCode.FORBIDDEN).send({
         success: false,
         message: `Forbidden: '${options.permission}' permission required`,
-        statusCode: 403,
+        statusCode: HttpStatusCode.FORBIDDEN,
       })
       return
     }

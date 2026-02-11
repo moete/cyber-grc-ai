@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
 import { sql } from 'kysely'
 import db from '#services/db'
+import { HttpStatusCode } from 'shared'
 
 /**
  * Organization-scope middleware — sets the PostgreSQL session variable
@@ -18,10 +19,10 @@ import db from '#services/db'
 export default class OrgScopeMiddleware {
   async handle(ctx: HttpContext, next: NextFn) {
     if (!ctx.auth?.organizationId) {
-      ctx.response.status(401).send({
+      ctx.response.status(HttpStatusCode.UNAUTHORIZED).send({
         success: false,
         message: 'Organization context missing — authenticate first',
-        statusCode: 401,
+        statusCode: HttpStatusCode.UNAUTHORIZED,
       })
       return
     }

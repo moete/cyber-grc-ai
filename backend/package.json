@@ -15,6 +15,7 @@
   "scripts": {
     "dev": "tsx --watch bin/server.ts",
     "build": "node ace build --production",
+    "start": "node build/bin/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node ace test",
     "migrate": "tsx database/migrator.ts",

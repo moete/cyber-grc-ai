@@ -1,5 +1,6 @@
 import app from '@adonisjs/core/services/app'
 import { HttpContext, ExceptionHandler } from '@adonisjs/core/http'
+import { HttpStatusCode } from 'shared'
 
 export default class HttpExceptionHandler extends ExceptionHandler {
   /**
@@ -17,7 +18,10 @@ export default class HttpExceptionHandler extends ExceptionHandler {
    *   - Generic unhandled errors (500)
    */
   async handle(error: any, ctx: HttpContext) {
-    const status = error.status ?? error.statusCode ?? 500
+    const status =
+      error.status ??
+      error.statusCode ??
+      HttpStatusCode.INTERNAL_SERVER_ERROR
 
     // VineJS validation errors have a `messages` array
     if (error.messages && Array.isArray(error.messages)) {
@@ -28,11 +32,11 @@ export default class HttpExceptionHandler extends ExceptionHandler {
         fieldErrors[field].push(msg.message ?? 'Validation failed')
       }
 
-      return ctx.response.status(422).send({
+      return ctx.response.status(HttpStatusCode.UNPROCESSABLE_ENTITY).send({
         success: false,
         message: 'Validation failed',
         errors: fieldErrors,
-        statusCode: 422,
+        statusCode: HttpStatusCode.UNPROCESSABLE_ENTITY,
       })
     }
 
@@ -41,7 +45,9 @@ export default class HttpExceptionHandler extends ExceptionHandler {
       success: false,
       message: error.message || 'Internal server error',
       statusCode: status,
-      ...(this.debug && status === 500 ? { stack: error.stack } : {}),
+      ...(this.debug && status === HttpStatusCode.INTERNAL_SERVER_ERROR
+        ? { stack: error.stack }
+        : {}),
     })
   }
 

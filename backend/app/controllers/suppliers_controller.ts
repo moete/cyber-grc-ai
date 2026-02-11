@@ -2,7 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import db from '#services/db'
 import { logAudit } from '#services/audit_service'
 import { createSupplierValidator, updateSupplierValidator } from '#validators/supplier_validator'
-import { AuditAction, ENTITY_TYPES, type ISupplier } from 'shared'
+import { AuditAction, ENTITY_TYPES, HttpStatusCode, type ISupplier } from 'shared'
 
 /**
  * Map camelCase sort param from the API to snake_case DB column names.
@@ -66,7 +66,7 @@ export default class SuppliersController {
       .offset(offset)
       .execute()
 
-    return response.status(200).send({
+    return response.status(HttpStatusCode.OK).send({
       data: rows.map(toSupplierResponse),
       meta: {
         total,
@@ -89,14 +89,14 @@ export default class SuppliersController {
       .executeTakeFirst()
 
     if (!supplier) {
-      return response.status(404).send({
+      return response.status(HttpStatusCode.NOT_FOUND).send({
         success: false,
-        message: 'Supplier not found',
-        statusCode: 404,
+        message: 'Supplier not found in your organization',
+        statusCode: HttpStatusCode.NOT_FOUND,
       })
     }
 
-    return response.status(200).send({
+    return response.status(HttpStatusCode.OK).send({
       success: true,
       data: toSupplierResponse(supplier),
     })
@@ -135,7 +135,7 @@ export default class SuppliersController {
       ipAddress: request.ip(),
     })
 
-    return response.status(201).send({
+    return response.status(HttpStatusCode.CREATED).send({
       success: true,
       data: toSupplierResponse(supplier),
     })
@@ -154,10 +154,10 @@ export default class SuppliersController {
       .executeTakeFirst()
 
     if (!existing) {
-      return response.status(404).send({
+      return response.status(HttpStatusCode.NOT_FOUND).send({
         success: false,
-        message: 'Supplier not found',
-        statusCode: 404,
+        message: 'Supplier not found in your organization',
+        statusCode: HttpStatusCode.NOT_FOUND,
       })
     }
 
@@ -197,7 +197,7 @@ export default class SuppliersController {
       ipAddress: request.ip(),
     })
 
-    return response.status(200).send({
+    return response.status(HttpStatusCode.OK).send({
       success: true,
       data: toSupplierResponse(updated),
     })
@@ -215,10 +215,10 @@ export default class SuppliersController {
       .executeTakeFirst()
 
     if (!existing) {
-      return response.status(404).send({
+      return response.status(HttpStatusCode.NOT_FOUND).send({
         success: false,
-        message: 'Supplier not found',
-        statusCode: 404,
+        message: 'Supplier not found in your organization',
+        statusCode: HttpStatusCode.NOT_FOUND,
       })
     }
 
@@ -240,7 +240,7 @@ export default class SuppliersController {
       ipAddress: request.ip(),
     })
 
-    return response.status(200).send({
+    return response.status(HttpStatusCode.OK).send({
       success: true,
       message: 'Supplier deleted successfully',
     })

@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import db from '#services/db'
+import { HttpStatusCode } from 'shared'
 
 export default class AuditLogsController {
   /**
@@ -65,7 +66,7 @@ export default class AuditLogsController {
       createdAt: row.created_at,
     }))
 
-    return response.status(200).send({
+    return response.status(HttpStatusCode.OK).send({
       data,
       meta: {
         total,
@@ -88,14 +89,14 @@ export default class AuditLogsController {
       .executeTakeFirst()
 
     if (!log) {
-      return response.status(404).send({
+      return response.status(HttpStatusCode.NOT_FOUND).send({
         success: false,
         message: 'Audit log entry not found',
-        statusCode: 404,
+        statusCode: HttpStatusCode.NOT_FOUND,
       })
     }
 
-    return response.status(200).send({
+    return response.status(HttpStatusCode.OK).send({
       success: true,
       data: {
         id: log.id,

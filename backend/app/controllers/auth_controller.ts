@@ -5,6 +5,7 @@ import db from '#services/db'
 import { verifyPassword } from '#services/hash'
 import { loginValidator } from '#validators/auth_validator'
 import type { IJwtPayload, Roles } from 'shared'
+import { HttpStatusCode } from 'shared'
 
 export default class AuthController {
   /**
@@ -50,7 +51,7 @@ export default class AuthController {
       expiresIn: env.get('JWT_EXPIRES_IN') ?? '2h',
     })
 
-    return response.status(200).send({
+    return response.status(HttpStatusCode.OK).send({
       success: true,
       data: {
         token,
@@ -92,14 +93,14 @@ export default class AuthController {
       .executeTakeFirst()
 
     if (!user) {
-      return response.status(404).send({
+      return response.status(HttpStatusCode.NOT_FOUND).send({
         success: false,
         message: 'User not found',
-        statusCode: 404,
+        statusCode: HttpStatusCode.NOT_FOUND,
       })
     }
 
-    return response.status(200).send({
+    return response.status(HttpStatusCode.OK).send({
       success: true,
       data: {
         id: user.id,
@@ -122,7 +123,7 @@ export default class AuthController {
    * This endpoint exists for API completeness and audit logging.
    */
   async logout({ response }: HttpContext) {
-    return response.status(200).send({
+    return response.status(HttpStatusCode.OK).send({
       success: true,
       message: 'Logged out successfully (discard the token client-side)',
     })
@@ -131,9 +132,9 @@ export default class AuthController {
 
 /** Helper — send a 401 with consistent format */
 function ctx_unauthorized(response: any, message: string) {
-  response.status(401).send({
+  response.status(HttpStatusCode.UNAUTHORIZED).send({
     success: false,
     message,
-    statusCode: 401,
+    statusCode: HttpStatusCode.UNAUTHORIZED,
   })
 }
