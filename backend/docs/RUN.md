@@ -36,13 +36,28 @@ pnpm --filter backend setup:db
 
 ## Start the backend
 
+### Development (local)
+
+Runs the server with file watching; no build step.
+
 ```powershell
 pnpm --filter backend dev
 ```
 
-You should see a line like:
+You should see a line like: `started HTTP server on localhost:3333`
 
-`Server address: http://127.0.0.1:3333`
+**Note:** The standard Adonis command is `node ace serve --watch`. In this pnpm monorepo that can fail (assembler/picomatch resolution), so we use `tsx --watch bin/server.ts` for dev. Behaviour is the same: HTTP server with reload on file change.
+
+### Production (build then run)
+
+Build compiles TypeScript to `build/`; then run the compiled server (e.g. behind PM2).
+
+```powershell
+pnpm --filter backend build
+NODE_ENV=production pnpm --filter backend start
+```
+
+Or with PM2: `pm2 start ecosystem.config.js` (pointing to `node build/bin/server.js`).
 
 ## API quick test
 
