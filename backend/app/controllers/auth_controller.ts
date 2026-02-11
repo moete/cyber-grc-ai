@@ -1,11 +1,9 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import jwt from 'jsonwebtoken'
+import jwt, { type SignOptions } from 'jsonwebtoken'
 import env from '#start/env'
 import db from '#services/db'
-import { verifyPassword } from '#services/hash'
+import { verifyPassword, HttpStatusCode, type IJwtPayload, type Roles } from '@shared'
 import { loginValidator } from '#validators/auth_validator'
-import type { IJwtPayload, Roles } from '@shared'
-import { HttpStatusCode } from '@shared'
 
 export default class AuthController {
   /**
@@ -47,9 +45,10 @@ export default class AuthController {
       organizationId: user.organization_id,
     }
 
-    const token = jwt.sign(payload, env.get('JWT_SECRET'), {
-      expiresIn: env.get('JWT_EXPIRES_IN') ?? '2h',
-    })
+    const signOptions: SignOptions = {
+      expiresIn: (env.get('JWT_EXPIRES_IN') ?? '2h') as SignOptions['expiresIn'],
+    }
+    const token = jwt.sign(payload, env.get('JWT_SECRET') as jwt.Secret, signOptions)
 
     return response.status(HttpStatusCode.OK).send({
       success: true,
