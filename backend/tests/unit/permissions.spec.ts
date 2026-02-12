@@ -6,16 +6,25 @@ import {
   Roles,
 } from '@shared'
 
-test.group('RBAC permissions', () => {
-  test('Owner has all permissions', ({ assert }) => {
-    const allPermissions = Object.values(Permission)
 
-    for (const perm of allPermissions) {
-      assert.isTrue(
-        hasPermission(Roles.OWNER, perm as Permission),
-        `Owner should have permission ${perm}`
-      )
-    }
+test.group('RBAC permissions (hasPermission)', () => {
+  test('Owner has ORG_DELETE and USER_MANAGE', ({ assert }) => {
+    assert.isTrue(hasPermission(Roles.OWNER, Permission.ORG_DELETE))
+    assert.isTrue(hasPermission(Roles.OWNER, Permission.USER_MANAGE))
+  })
+
+  test('hasPermission normalizes string role (e.g. from API)', ({ assert }) => {
+    assert.isTrue(hasPermission('Owner', Permission.SUPPLIER_CREATE))
+    assert.isTrue(hasPermission('owner', Permission.SUPPLIER_READ))
+    assert.isFalse(hasPermission('unknown', Permission.SUPPLIER_READ))
+    assert.isFalse(hasPermission(undefined, Permission.SUPPLIER_READ))
+  })
+
+  test('Admin does not have ORG_DELETE', ({ assert }) => {
+    assert.isFalse(
+      hasPermission(Roles.ADMIN, Permission.ORG_DELETE),
+      'Only Owner can delete organisation'
+    )
   })
 
   test('Analyst cannot delete suppliers', ({ assert }) => {

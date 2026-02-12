@@ -196,7 +196,7 @@ export function SupplierFormPage() {
             <button
               type="submit"
               disabled={isSubmitting || mutating}
-              className="rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+              className="cursor-pointer rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {mutating ? 'Saving…' : isEdit ? 'Update' : 'Create'}
             </button>

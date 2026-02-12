@@ -22,14 +22,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         <nav className="p-2">
           <Link
             to="/suppliers"
-            className="block rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100"
+            className="block cursor-pointer rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100"
           >
             Suppliers
           </Link>
           {canManageUsers && (
             <Link
               to="/users"
-              className="block rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100"
+              className="block cursor-pointer rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100"
             >
               Users
             </Link>
@@ -48,7 +48,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={handleLogout}
-              className="text-sm text-slate-600 hover:text-slate-900"
+              className="cursor-pointer text-sm text-slate-600 hover:text-slate-900"
             >
               Log out
             </button>

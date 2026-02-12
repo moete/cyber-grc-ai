@@ -8,6 +8,8 @@
 */
 
 process.env.NODE_ENV = 'development'
+// Use a different port for the test HTTP server so it doesn't conflict with dev (3333)
+if (!process.env.PORT) process.env.PORT = '3334'
 
 import 'reflect-metadata'
 import { Ignitor, prettyPrintError } from '@adonisjs/core'

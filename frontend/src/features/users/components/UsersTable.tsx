@@ -57,7 +57,7 @@ export function UsersTable({
                   <button
                     type="button"
                     onClick={() => onEdit(u)}
-                    className="mr-3 text-sm text-indigo-600 hover:underline"
+                    className="mr-3 cursor-pointer text-sm text-indigo-600 hover:underline"
                   >
                     Edit
                   </button>
@@ -65,7 +65,7 @@ export function UsersTable({
                     type="button"
                     onClick={() => onToggleActive(u.id, !u.isActive)}
                     disabled={isUpdating}
-                    className="mr-3 text-sm text-slate-600 hover:underline disabled:opacity-50"
+                    className="mr-3 cursor-pointer text-sm text-slate-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {u.isActive ? 'Deactivate' : 'Activate'}
                   </button>
@@ -74,7 +74,7 @@ export function UsersTable({
                       type="button"
                       onClick={() => onDelete(u)}
                       disabled={isDeleting}
-                      className="text-sm text-red-600 hover:underline disabled:opacity-50"
+                      className="cursor-pointer text-sm text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Delete
                     </button>
