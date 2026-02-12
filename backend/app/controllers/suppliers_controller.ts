@@ -3,125 +3,45 @@ import { logAudit } from '#services/audit_service'
 import { enqueueAiJob } from '#services/ai_queue'
 import { scopedSelect, scopedUpdate, scopedDelete, scopedInsert } from '#services/scoped_query'
 import { createSupplierValidator, updateSupplierValidator } from '#validators/supplier_validator'
-import {
-  AiAnalysisStatus,
-  AuditAction,
-  canAccessResource,
-  Category,
-  ENTITY_TYPES,
-  HttpStatusCode,
-  Permission,
-  RiskLevel,
-  Status,
-  type ISupplier,
-} from '@shared'
-
-/**
- * Map camelCase sort param from the API to snake_case DB column names.
- * Only whitelisted columns can be sorted on — prevents SQL injection.
- */
-const SORT_COLUMN_MAP: Record<string, string> = {
-  name: 'name',
-  domain: 'domain',
-  category: 'category',
-  riskLevel: 'risk_level',
-  status: 'status',
-  createdAt: 'created_at',
-  updatedAt: 'updated_at',
-  contractEndDate: 'contract_end_date',
-  aiRiskScore: 'ai_risk_score',
-}
-
-/**
- * Defense-in-depth: verify the loaded resource belongs to the user's org
- * AND the user has the required permission. Uses canAccessResource from shared.
- *
- * The scoped query is the primary filter; this is the application-level safety net.
- */
-function assertAccess(
-  auth: HttpContext['auth'],
-  resourceOrgId: string,
-  permission: Permission
-): boolean {
-  return canAccessResource(auth.role, auth.organizationId, resourceOrgId, permission)
-}
+import { AiAnalysisStatus, RiskLevel, Status, Category, ENTITY_TYPES, Permission, AuditAction, type ISupplier } from '@shared'
+import { applySupplierFilters, buildSupplierUpdateValues, getSort, toSupplierResponse, type SupplierQueryString } from '#services/supplier_service'
+import { parsePagination, countQuery, paginated } from '#helpers/pagination'
+import { ok, created, deleted } from '#helpers/responses'
+import { hasAccess, requireAccess } from '#helpers/access'
+import NotFoundException from '#exceptions/not_found_exception'
+import ForbiddenException from '#exceptions/forbidden_exception'
 
 export default class SuppliersController {
   /**
    * GET /api/suppliers
-   * Server-side pagination, filtering, sorting.
    */
   async index({ auth, request, response }: HttpContext) {
-    const qs = request.qs()
-    const page = Math.max(1, Number(qs.page) || 1)
-    const limit = Math.min(100, Math.max(1, Number(qs.limit) || 10))
-    const offset = (page - 1) * limit
+    const qs = request.qs() as SupplierQueryString
+    const pg = parsePagination(qs)
 
     let query = scopedSelect('suppliers', auth.organizationId)
+    query = applySupplierFilters(query, qs)
 
-    // Filters
-    if (qs.name) {
-      query = query.where('name', 'ilike', `%${qs.name}%`)
-    }
-    if (qs.category) {
-      query = query.where('category', '=', qs.category)
-    }
-    if (qs.riskLevel) {
-      query = query.where('risk_level', '=', qs.riskLevel)
-    }
-    if (qs.status) {
-      query = query.where('status', '=', qs.status)
-    }
-
-    // Total count (before pagination)
-    const countResult = await query
-      .select((eb: any) => eb.fn.countAll().as('count'))
-      .executeTakeFirst()
-    const total = Number((countResult as any)?.count ?? 0)
-
-    // Sorting — only whitelisted columns
-    const sortColumn = SORT_COLUMN_MAP[qs.sortBy as string] ?? 'created_at'
-    const sortOrder = qs.sortOrder === 'asc' ? 'asc' : 'desc'
+    const total = await countQuery(query)
+    const { sortColumn, sortOrder } = getSort(qs)
 
     const rows = await query
       .selectAll()
       .orderBy(sortColumn as any, sortOrder)
-      .limit(limit)
-      .offset(offset)
+      .limit(pg.limit)
+      .offset(pg.offset)
       .execute()
 
-    return response.status(HttpStatusCode.OK).send({
-      data: rows.map(toSupplierResponse),
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    })
+    return paginated<ISupplier>(response, rows.map(toSupplierResponse), pg, total)
   }
 
   /**
    * GET /api/suppliers/:id
    */
   async show({ auth, params, response }: HttpContext) {
-    const supplier = await scopedSelect('suppliers', auth.organizationId)
-      .where('id', '=', params.id)
-      .selectAll()
-      .executeTakeFirst()
-
-    if (!supplier || !assertAccess(auth, supplier.organization_id, Permission.SUPPLIER_READ)) {
-      return response.status(HttpStatusCode.NOT_FOUND).send({
-        success: false,
-        message: 'Supplier not found in your organization',
-        statusCode: HttpStatusCode.NOT_FOUND,
-      })
-    }
-
-    return response.status(HttpStatusCode.OK).send({
-      success: true,
-      data: toSupplierResponse(supplier),
-    })
+    const supplier = await this.findSupplier(auth.organizationId, params.id)
+    requireAccess(auth, supplier.organization_id, Permission.SUPPLIER_READ, 'Supplier not found in your organization')
+    return ok(response, toSupplierResponse(supplier))
   }
 
   /**
@@ -148,195 +68,107 @@ export default class SuppliersController {
       .returningAll()
       .execute()
 
-    // Enqueue AI analysis job (async pipeline)
-    await enqueueAiJob({
-      supplierId: supplier.id,
-      organizationId: auth.organizationId,
-    })
+    await enqueueAiJob({ supplierId: supplier.id, organizationId: auth.organizationId })
 
-    // Audit trail
-    await logAudit({
-      organizationId: auth.organizationId,
-      userId: auth.userId,
-      action: AuditAction.CREATE,
-      entityType: ENTITY_TYPES.SUPPLIER,
-      entityId: supplier.id,
-      before: null,
-      after: toSupplierResponse(supplier) as unknown as Record<string, unknown>,
-      ipAddress: request.ip(),
-    })
+    await this.audit(auth, AuditAction.CREATE, supplier.id, null, supplier, request.ip())
 
-    return response.status(HttpStatusCode.CREATED).send({
-      success: true,
-      data: toSupplierResponse(supplier),
-    })
+    return created(response, toSupplierResponse(supplier))
   }
 
   /**
    * PUT /api/suppliers/:id
-   * Full update: Owner, Admin (SUPPLIER_UPDATE).
-   * Partial update for Analyst: risk level only (RISK_LEVEL_UPDATE), notes only (NOTES_ADD).
    */
   async update({ auth, params, request, response }: HttpContext) {
-    const existing = await scopedSelect('suppliers', auth.organizationId)
-      .where('id', '=', params.id)
-      .selectAll()
-      .executeTakeFirst()
+    const existing = await this.findSupplier(auth.organizationId, params.id)
 
-    if (!existing) {
-      return response.status(HttpStatusCode.NOT_FOUND).send({
-        success: false,
-        message: 'Supplier not found in your organization',
-        statusCode: HttpStatusCode.NOT_FOUND,
-      })
-    }
+    const fullUpdate = hasAccess(auth, existing.organization_id, Permission.SUPPLIER_UPDATE)
+    const canRisk = hasAccess(auth, existing.organization_id, Permission.RISK_LEVEL_UPDATE)
+    const canNotes = hasAccess(auth, existing.organization_id, Permission.NOTES_ADD)
 
-    const hasFullUpdate = assertAccess(auth, existing.organization_id, Permission.SUPPLIER_UPDATE)
-    const canRiskLevel = assertAccess(auth, existing.organization_id, Permission.RISK_LEVEL_UPDATE)
-    const canNotes = assertAccess(auth, existing.organization_id, Permission.NOTES_ADD)
-
-    if (!hasFullUpdate && !canRiskLevel && !canNotes) {
-      return response.status(HttpStatusCode.NOT_FOUND).send({
-        success: false,
-        message: 'Supplier not found in your organization',
-        statusCode: HttpStatusCode.NOT_FOUND,
-      })
+    if (!fullUpdate && !canRisk && !canNotes) {
+      throw new ForbiddenException('You do not have permission to update this supplier')
     }
 
     const data = await request.validateUsing(updateSupplierValidator)
 
-    // Analyst can only change riskLevel and/or notes; other fields are ignored, not rejected
-    if (!hasFullUpdate) {
-      if (data.riskLevel !== undefined && !canRiskLevel) {
-        return response.status(HttpStatusCode.FORBIDDEN).send({
-          success: false,
-          message: 'Forbidden: you do not have permission to update risk level',
-          statusCode: HttpStatusCode.FORBIDDEN,
-        })
+    if (!fullUpdate) {
+      if (data.riskLevel !== undefined && !canRisk) {
+        throw new ForbiddenException('You do not have permission to update risk level')
       }
       if (data.notes !== undefined && !canNotes) {
-        return response.status(HttpStatusCode.FORBIDDEN).send({
-          success: false,
-          message: 'Forbidden: you do not have permission to update notes',
-          statusCode: HttpStatusCode.FORBIDDEN,
-        })
+        throw new ForbiddenException('You do not have permission to update notes')
       }
     }
 
-    const updateValues: Record<string, any> = { updated_at: new Date() }
-    if (hasFullUpdate) {
-      if (data.name !== undefined) updateValues.name = data.name
-      if (data.domain !== undefined) updateValues.domain = data.domain
-      if (data.category !== undefined) updateValues.category = data.category
-      if (data.riskLevel !== undefined) updateValues.risk_level = data.riskLevel
-      if (data.status !== undefined) updateValues.status = data.status
-      if (data.contractEndDate !== undefined) {
-        updateValues.contract_end_date = data.contractEndDate
-          ? new Date(data.contractEndDate)
-          : null
-      }
-      if (data.notes !== undefined) updateValues.notes = data.notes
-    } else {
-      if (canRiskLevel && data.riskLevel !== undefined) updateValues.risk_level = data.riskLevel
-      if (canNotes && data.notes !== undefined) updateValues.notes = data.notes
-    }
+    const updateValues = buildSupplierUpdateValues(data, fullUpdate, canRisk, canNotes)
 
     const [updated] = await scopedUpdate('suppliers', auth.organizationId)
       .set({
         ...updateValues,
-        ...(hasFullUpdate
-          ? {
-              ai_status: AiAnalysisStatus.PENDING,
-              ai_last_requested_at: new Date(),
-              ai_last_completed_at: null,
-              ai_error: null,
-            }
+        ...(fullUpdate
+          ? { ai_status: AiAnalysisStatus.PENDING, ai_last_requested_at: new Date(), ai_last_completed_at: null, ai_error: null }
           : {}),
       })
       .where('id', '=', params.id)
       .returningAll()
       .execute()
 
-    // Audit trail
-    await logAudit({
-      organizationId: auth.organizationId,
-      userId: auth.userId,
-      action: AuditAction.UPDATE,
-      entityType: ENTITY_TYPES.SUPPLIER,
-      entityId: params.id,
-      before: toSupplierResponse(existing) as unknown as Record<string, unknown>,
-      after: toSupplierResponse(updated) as unknown as Record<string, unknown>,
-      ipAddress: request.ip(),
-    })
+    await this.audit(auth, AuditAction.UPDATE, params.id, existing, updated, request.ip())
 
-    return response.status(HttpStatusCode.OK).send({
-      success: true,
-      data: toSupplierResponse(updated),
-    })
+    return ok(response, toSupplierResponse(updated))
   }
 
   /**
    * DELETE /api/suppliers/:id
    */
   async destroy({ auth, params, request, response }: HttpContext) {
-    const existing = await scopedSelect('suppliers', auth.organizationId)
-      .where('id', '=', params.id)
-      .selectAll()
-      .executeTakeFirst()
-
-    if (!existing || !assertAccess(auth, existing.organization_id, Permission.SUPPLIER_DELETE)) {
-      return response.status(HttpStatusCode.NOT_FOUND).send({
-        success: false,
-        message: 'Supplier not found in your organization',
-        statusCode: HttpStatusCode.NOT_FOUND,
-      })
-    }
+    const existing = await this.findSupplier(auth.organizationId, params.id)
+    requireAccess(auth, existing.organization_id, Permission.SUPPLIER_DELETE, 'You do not have permission to delete this supplier')
 
     await scopedDelete('suppliers', auth.organizationId)
       .where('id', '=', params.id)
       .execute()
 
-    // Audit trail
+    await this.audit(auth, AuditAction.DELETE, params.id, existing, null, request.ip())
+
+    return deleted(response, 'Supplier deleted successfully')
+  }
+
+  // ── Private helpers ──────────────────────────────────────────────
+
+  /**
+   * Scoped find-or-404.
+   */
+  private async findSupplier(organizationId: string, id: string) {
+    const row = await scopedSelect('suppliers', organizationId)
+      .where('id', '=', id)
+      .selectAll()
+      .executeTakeFirst()
+
+    if (!row) throw new NotFoundException('Supplier not found in your organization')
+    return row
+  }
+
+  /**
+   * audit wrapper 
+   */
+  private async audit(
+    auth: HttpContext['auth'],
+    action: AuditAction,
+    entityId: string,
+    before: any,
+    after: any,
+    ipAddress: string,
+  ) {
     await logAudit({
       organizationId: auth.organizationId,
       userId: auth.userId,
-      action: AuditAction.DELETE,
+      action,
       entityType: ENTITY_TYPES.SUPPLIER,
-      entityId: params.id,
-      before: toSupplierResponse(existing) as unknown as Record<string, unknown>,
-      after: null,
-      ipAddress: request.ip(),
-    })
-
-    return response.status(HttpStatusCode.OK).send({
-      success: true,
-      message: 'Supplier deleted successfully',
+      entityId,
+      before: before ? toSupplierResponse(before) as unknown as Record<string, unknown> : null,
+      after: after ? toSupplierResponse(after) as unknown as Record<string, unknown> : null,
+      ipAddress,
     })
   }
 }
-
-/**
- * Transform a DB row (snake_case) to the API response format (camelCase).
- */
-function toSupplierResponse(row: any): ISupplier {
-  return {
-    id: row.id,
-    organizationId: row.organization_id,
-    name: row.name,
-    domain: row.domain,
-    category: row.category,
-    riskLevel: row.risk_level,
-    status: row.status,
-    contractEndDate: row.contract_end_date,
-    notes: row.notes,
-    aiRiskScore: row.ai_risk_score,
-    aiAnalysis: row.ai_analysis,
-    aiStatus: row.ai_status ?? null,
-    aiLastRequestedAt: row.ai_last_requested_at ?? null,
-    aiLastCompletedAt: row.ai_last_completed_at ?? null,
-    aiError: row.ai_error ?? null,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  }
-}
-

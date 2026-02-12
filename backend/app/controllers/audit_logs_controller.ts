@@ -1,6 +1,10 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { scopedSelect } from '#services/scoped_query'
-import { HttpStatusCode } from '@shared'
+import { toAuditLogResponse } from '#services/audit_log_service'
+import type { AuditLogRow } from '#types/audit_log'
+import { parsePagination, countQuery, paginated } from '#helpers/pagination'
+import { ok } from '#helpers/responses'
+import NotFoundException from '#exceptions/not_found_exception'
 
 export default class AuditLogsController {
   /**
@@ -8,71 +12,28 @@ export default class AuditLogsController {
    *
    * Paginated, filterable audit trail — accessible only to Admin and Auditor roles
    * (enforced by rbac middleware on the route).
-   *
-   * Query params:
-   *   page, limit          — pagination
-   *   entityType, entityId — filter by entity (e.g. supplier timeline)
-   *   userId               — filter by acting user
-   *   action               — filter by action (CREATE, UPDATE, DELETE)
    */
   async index({ auth, request, response }: HttpContext) {
     const qs = request.qs()
-    const page = Math.max(1, Number(qs.page) || 1)
-    const limit = Math.min(100, Math.max(1, Number(qs.limit) || 20))
-    const offset = (page - 1) * limit
+    const pg = parsePagination(qs, 20)
 
     let query = scopedSelect('audit_logs', auth.organizationId)
 
-    // Filters
-    if (qs.entityType) {
-      query = query.where('entity_type', '=', qs.entityType)
-    }
-    if (qs.entityId) {
-      query = query.where('entity_id', '=', qs.entityId)
-    }
-    if (qs.userId) {
-      query = query.where('user_id', '=', qs.userId)
-    }
-    if (qs.action) {
-      query = query.where('action', '=', qs.action)
-    }
+    if (qs.entityType) query = query.where('entity_type', '=', qs.entityType)
+    if (qs.entityId) query = query.where('entity_id', '=', qs.entityId)
+    if (qs.userId) query = query.where('user_id', '=', qs.userId)
+    if (qs.action) query = query.where('action', '=', qs.action)
 
-    // Total count
-    const countResult = await query
-      .select((eb: any) => eb.fn.countAll().as('count'))
-      .executeTakeFirst()
-    const total = Number((countResult as any)?.count ?? 0)
+    const total = await countQuery(query)
 
-    // Data (newest first — append-only log, chronological makes sense)
-    const rows = await query
+    const rows: AuditLogRow[] = await query
       .selectAll()
       .orderBy('created_at', 'desc')
-      .limit(limit)
-      .offset(offset)
+      .limit(pg.limit)
+      .offset(pg.offset)
       .execute()
 
-    const data = rows.map((row: any) => ({
-      id: row.id,
-      organizationId: row.organization_id,
-      userId: row.user_id,
-      action: row.action,
-      entityType: row.entity_type,
-      entityId: row.entity_id,
-      before: row.before,
-      after: row.after,
-      ipAddress: row.ip_address,
-      createdAt: row.created_at,
-    }))
-
-    return response.status(HttpStatusCode.OK).send({
-      data,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    })
+    return paginated(response, rows.map(toAuditLogResponse), pg, total)
   }
 
   /**
@@ -82,30 +43,10 @@ export default class AuditLogsController {
     const log = await scopedSelect('audit_logs', auth.organizationId)
       .where('id', '=', params.id)
       .selectAll()
-      .executeTakeFirst()
+      .executeTakeFirst() as AuditLogRow | undefined
 
-    if (!log) {
-      return response.status(HttpStatusCode.NOT_FOUND).send({
-        success: false,
-        message: 'Audit log entry not found',
-        statusCode: HttpStatusCode.NOT_FOUND,
-      })
-    }
+    if (!log) throw new NotFoundException('Audit log entry not found')
 
-    return response.status(HttpStatusCode.OK).send({
-      success: true,
-      data: {
-        id: log.id,
-        organizationId: log.organization_id,
-        userId: log.user_id,
-        action: log.action,
-        entityType: log.entity_type,
-        entityId: log.entity_id,
-        before: log.before,
-        after: log.after,
-        ipAddress: log.ip_address,
-        createdAt: log.created_at,
-      },
-    })
+    return ok(response, toAuditLogResponse(log))
   }
 }

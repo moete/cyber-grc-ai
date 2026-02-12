@@ -3,7 +3,7 @@ import type { NextFn } from '@adonisjs/core/types/http'
 import jwt from 'jsonwebtoken'
 import env from '#start/env'
 import db from '#services/db'
-import type { IJwtPayload } from '@shared'
+import type { IApiErrorResponse, IJwtPayload } from '@shared'
 import { HttpStatusCode, type Roles } from '@shared'
 
 /**
@@ -32,7 +32,7 @@ export default class AuthMiddleware {
   async handle(ctx: HttpContext, next: NextFn) {
     const authHeader = ctx.request.header('authorization')
     if (!authHeader?.startsWith('Bearer ')) {
-      ctx.response.status(HttpStatusCode.UNAUTHORIZED).send({
+      ctx.response.status(HttpStatusCode.UNAUTHORIZED).send(<IApiErrorResponse>{
         success: false,
         message: 'Missing or invalid authorization header',
         statusCode: HttpStatusCode.UNAUTHORIZED,
@@ -46,13 +46,13 @@ export default class AuthMiddleware {
     try {
       payload = jwt.verify(token, env.get('JWT_SECRET')) as IJwtPayload
     } catch {
-      ctx.response.status(HttpStatusCode.UNAUTHORIZED).send({
+      ctx.response.status(HttpStatusCode.UNAUTHORIZED).send(<IApiErrorResponse>{
         success: false,
         message: 'Invalid or expired token',
         statusCode: HttpStatusCode.UNAUTHORIZED,
-      })
-      return
-    }
+      })  
+      return  
+    }  
 
     // Verify user still exists and is active in the DB
     // This catches deactivated users or deleted accounts even if the JWT is valid

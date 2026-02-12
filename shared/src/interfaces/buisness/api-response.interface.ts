@@ -9,6 +9,7 @@ export interface IApiErrorResponse {
   message: string;
   errors?: Record<string, string[]>;
   statusCode: number;
+  stack?: string;
 }
 
 export interface IPaginatedResponse<T> {

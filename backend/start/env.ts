@@ -1,8 +1,4 @@
 /*
-|--------------------------------------------------------------------------
-| Environment variables service
-|--------------------------------------------------------------------------
-|
 | The `Env.create` method creates an instance of the Env service. The
 | service validates the environment variables and also cast values
 | to JavaScript data types.
@@ -18,37 +14,19 @@ export default await Env.create(new URL('../', import.meta.url), {
   HOST: Env.schema.string({ format: 'host' }),
   LOG_LEVEL: Env.schema.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']),
 
-  /*
-  |----------------------------------------------------------
-  | Variables for configuring database connection
-  |----------------------------------------------------------
-  */
+
   DB_HOST: Env.schema.string({ format: 'host' }),
   DB_PORT: Env.schema.number(),
   DB_USER: Env.schema.string(),
   DB_PASSWORD: Env.schema.string.optional(),
   DB_DATABASE: Env.schema.string(),
 
-  /*
-  |----------------------------------------------------------
-  | Variables for JWT authentication
-  |----------------------------------------------------------
-  */
   JWT_SECRET: Env.schema.string(),
   JWT_EXPIRES_IN: Env.schema.string.optional(),
 
-  /*
-  |----------------------------------------------------------
-  | Redis (for BullMQ AI queue)
-  |----------------------------------------------------------
-  */
   REDIS_HOST: Env.schema.string.optional(),
   REDIS_PORT: Env.schema.number.optional(),
 
-  /*
-  |----------------------------------------------------------
-  | Application
-  |----------------------------------------------------------
-  */
+
   APP_NAME: Env.schema.string.optional(),
 })

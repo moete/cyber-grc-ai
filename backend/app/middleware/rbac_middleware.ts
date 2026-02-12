@@ -1,6 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
-import { hasPermission, HttpStatusCode, type Permission } from '@shared'
+import { hasPermission, HttpStatusCode, type IApiErrorResponse, type Permission } from '@shared'
 
 type RbacOptions =
   | { permission: Permission }
@@ -23,11 +23,11 @@ export default class RbacMiddleware {
     options: RbacOptions
   ) {
     if (!ctx.auth) {
-      ctx.response.status(HttpStatusCode.UNAUTHORIZED).send({
+      ctx.response.status(HttpStatusCode.UNAUTHORIZED).send(<IApiErrorResponse>{
         success: false,
         message: 'Authentication required',
         statusCode: HttpStatusCode.UNAUTHORIZED,
-      })
+      })  
       return
     }
 
@@ -41,11 +41,11 @@ export default class RbacMiddleware {
         'permission' in options
           ? `Forbidden: '${options.permission}' permission required`
           : `Forbidden: one of [${options.anyOf.join(', ')}] required`
-      ctx.response.status(HttpStatusCode.FORBIDDEN).send({
+      ctx.response.status(HttpStatusCode.FORBIDDEN).send(<IApiErrorResponse>{
         success: false,
         message: msg,
         statusCode: HttpStatusCode.FORBIDDEN,
-      })
+        })
       return
     }
 

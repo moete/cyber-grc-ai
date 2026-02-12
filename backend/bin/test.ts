@@ -1,8 +1,5 @@
 /*
-|--------------------------------------------------------------------------
-| Test runner entrypoint
-|--------------------------------------------------------------------------
-|
+
 | The "test.ts" file is the entrypoint for running tests using Japa.
 |
 | Either you can run this file directly or use the "test"

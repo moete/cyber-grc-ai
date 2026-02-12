@@ -10,7 +10,9 @@
     "#services/*": "./app/services/*.js",
     "#validators/*": "./app/validators/*.js",
     "#start/*": "./start/*.js",
-    "#database/*": "./database/*.js"
+    "#database/*": "./database/*.js",
+    "#types/*": "./app/types/*.js",
+    "#helpers/*": "./app/helpers/*.js"
   },
   "scripts": {
     "dev": "tsx --watch bin/server.ts",

@@ -1,6 +1,6 @@
 import app from '@adonisjs/core/services/app'
 import { HttpContext, ExceptionHandler } from '@adonisjs/core/http'
-import { HttpStatusCode } from '@shared'
+import { HttpStatusCode, IApiErrorResponse } from '@shared'
 
 export default class HttpExceptionHandler extends ExceptionHandler {
   /**
@@ -32,7 +32,7 @@ export default class HttpExceptionHandler extends ExceptionHandler {
         fieldErrors[field].push(msg.message ?? 'Validation failed')
       }
 
-      return ctx.response.status(HttpStatusCode.UNPROCESSABLE_ENTITY).send({
+      return ctx.response.status(HttpStatusCode.UNPROCESSABLE_ENTITY).send(<IApiErrorResponse>{
         success: false,
         message: 'Validation failed',
         errors: fieldErrors,
@@ -41,7 +41,7 @@ export default class HttpExceptionHandler extends ExceptionHandler {
     }
 
     // Structured error response for all other errors
-    return ctx.response.status(status).send({
+    return ctx.response.status(status).send(<IApiErrorResponse>{
       success: false,
       message: error.message || 'Internal server error',
       statusCode: status,
