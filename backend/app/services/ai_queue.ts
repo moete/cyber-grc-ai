@@ -36,7 +36,7 @@ export async function enqueueAiJob(data: AiJobData) {
 export const aiWorker = new Worker<AiJobData>(
   QUEUE_NAME,
   async (job) => {
-    const { supplierId, organizationId } = job.data
+    const { supplierId } = job.data
 
     // Mark as processing
     await db
@@ -47,14 +47,12 @@ export const aiWorker = new Worker<AiJobData>(
         ai_error: null,
       })
       .where('id', '=', supplierId)
-      .where('organization_id', '=', organizationId)
       .execute()
 
     // Load current supplier snapshot
     const supplier = await db
       .selectFrom('suppliers')
       .where('id', '=', supplierId)
-      .where('organization_id', '=', organizationId)
       .select([
         'id',
         'name',
@@ -90,7 +88,6 @@ export const aiWorker = new Worker<AiJobData>(
           ai_error: null,
         })
         .where('id', '=', supplierId)
-        .where('organization_id', '=', organizationId)
         .execute()
     } catch (error: any) {
       await db
@@ -103,7 +100,6 @@ export const aiWorker = new Worker<AiJobData>(
               : 'AI analysis failed',
         })
         .where('id', '=', supplierId)
-        .where('organization_id', '=', organizationId)
         .execute()
 
       throw error

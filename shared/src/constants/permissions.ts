@@ -23,7 +23,8 @@ export const ROLE_PERMISSIONS: Record<Roles, Permission[]> = {
     Permission.RISK_POLICY_CONFIGURE,
     // Notes
     Permission.NOTES_ADD,
-    // Audit: intentionally not included — only Admin and Auditor can read audit
+    // Audit (Owner has "Tout" per spec but in audit trail accesible uniquement aux roles admin et auditor ? )
+   // Permission.AUDIT_READ,
   ],
 
   [Roles.ADMIN]: [
@@ -50,11 +51,26 @@ export const ROLE_PERMISSIONS: Record<Roles, Permission[]> = {
   ],
 };
 
+/** Normalize role string from API/store to Roles enum (case-insensitive for known values). */
+function normalizeRole(role: string | Roles | undefined): Roles | undefined {
+  if (!role || typeof role !== 'string') return undefined
+  const lower = role.trim().toLowerCase()
+  const map: Record<string, Roles> = {
+    owner: Roles.OWNER,
+    admin: Roles.ADMIN,
+    analyst: Roles.ANALYST,
+    auditor: Roles.AUDITOR,
+  }
+  return map[lower]
+}
+
 /**
  * Check if a given role has a specific permission.
+ * Accepts role as string (e.g. from API) and normalizes to Roles so lookup always works.
  */
-export function hasPermission(role: Roles, permission: Permission): boolean {
-  return ROLE_PERMISSIONS[role]?.includes(permission) ?? false;
+export function hasPermission(role: Roles | string | undefined, permission: Permission): boolean {
+  const normalized = typeof role === 'string' ? normalizeRole(role) : role
+  return ROLE_PERMISSIONS[normalized as Roles]?.includes(permission) ?? false
 }
 
 /**
@@ -62,7 +78,7 @@ export function hasPermission(role: Roles, permission: Permission): boolean {
  * Ensures both permission check AND tenant isolation.
  */
 export function canAccessResource(
-  userRole: Roles,
+  userRole: Roles | string,
   userOrganizationId: string,
   resourceOrganizationId: string,
   requiredPermission: Permission,
@@ -71,6 +87,5 @@ export function canAccessResource(
   if (userOrganizationId !== resourceOrganizationId) {
     return false;
   }
-  // Permission check
   return hasPermission(userRole, requiredPermission);
 }

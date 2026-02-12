@@ -4,6 +4,19 @@
  */
 import type { ILoginResponse, ISupplier } from '@shared'
 
+/** User as returned by /api/users (list/detail) — matches backend toUserResponse */
+export interface IUserPublic {
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  role: string
+  isActive: boolean
+  organizationId: string
+  organizationName: string
+  createdAt: string
+}
+
 export interface LoginSuccessResponse {
   success: true
   data: ILoginResponse
@@ -22,6 +35,16 @@ export interface SupplierListResponse {
 export interface SupplierDetailResponse {
   success: true
   data: ISupplier
+}
+
+export interface UserListResponse {
+  success: true
+  data: IUserPublic[]
+}
+
+export interface UserDetailResponse {
+  success: true
+  data: IUserPublic
 }
 
 export interface ApiErrorResponse {

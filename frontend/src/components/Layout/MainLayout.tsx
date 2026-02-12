@@ -1,9 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
+import { useCan } from '@/lib/authorization'
+import { Permission } from '@shared'
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
   const { user, logout } = useAuthStore()
+  const canManageUsers = useCan(Permission.USER_MANAGE)
 
   function handleLogout() {
     logout()
@@ -23,6 +26,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           >
             Suppliers
           </Link>
+          {canManageUsers && (
+            <Link
+              to="/users"
+              className="block rounded-lg px-3 py-2 text-slate-700 hover:bg-slate-100"
+            >
+              Users
+            </Link>
+          )}
         </nav>
       </aside>
       <div className="flex flex-1 flex-col">
@@ -43,7 +54,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         </header>
-        <main className="flex-1 p-6">{children}</main>
+        <main className="relative flex-1 p-6">
+          {children}
+        </main>
       </div>
     </div>
   )

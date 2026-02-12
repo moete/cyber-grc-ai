@@ -105,13 +105,16 @@ export default class SuppliersController {
     const [updated] = await scopedUpdate('suppliers', auth.organizationId)
       .set({
         ...updateValues,
-        ...(fullUpdate
-          ? { ai_status: AiAnalysisStatus.PENDING, ai_last_requested_at: new Date(), ai_last_completed_at: null, ai_error: null }
-          : {}),
+        ai_status: AiAnalysisStatus.PENDING,
+        ai_last_requested_at: new Date(),
+        ai_last_completed_at: null,
+        ai_error: null,
       })
       .where('id', '=', params.id)
       .returningAll()
       .execute()
+
+    await enqueueAiJob({ supplierId: updated.id, organizationId: auth.organizationId })
 
     await this.audit(auth, AuditAction.UPDATE, params.id, existing, updated, request.ip())
 
@@ -140,6 +143,12 @@ export default class SuppliersController {
    * Scoped find-or-404.
    */
   private async findSupplier(organizationId: string, id: string) {
+    // Guard against invalid UUIDs early so we return a clean 404
+    // instead of bubbling up a Postgres 22P02 error.
+    if (!id || typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)) {
+      throw new NotFoundException('Supplier not found in your organization')
+    }
+
     const row = await scopedSelect('suppliers', organizationId)
       .where('id', '=', id)
       .selectAll()

@@ -41,6 +41,19 @@ export async function findUserById(userId: string): Promise<UserWithOrgRow | und
 }
 
 /**
+ * List users in an organisation (for Owner user management).
+ */
+export async function listUsersByOrganization(organizationId: string): Promise<UserWithOrgRow[]> {
+  return db
+    .selectFrom('users')
+    .innerJoin('organisations', 'organisations.id', 'users.organization_id')
+    .where('users.organization_id', '=', organizationId)
+    .select([...USER_COLUMNS])
+    .orderBy('users.created_at', 'asc')
+    .execute() as Promise<UserWithOrgRow[]>
+}
+
+/**
  * Map a DB row to the camelCase user profile returned by the API.
  */
 export function toUserResponse(user: UserWithOrgRow) {

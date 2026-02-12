@@ -20,6 +20,8 @@ import { Permission } from '@shared'
 const AuthController = () => import('#controllers/auth_controller')
 const SuppliersController = () => import('#controllers/suppliers_controller')
 const AuditLogsController = () => import('#controllers/audit_logs_controller')
+const UsersController = () => import('#controllers/users_controller')
+const OrganisationsController = () => import('#controllers/organisations_controller')
 
 // ── Health check ──────────────────────────────────────────────
 router.get('/', async () => ({
@@ -77,6 +79,35 @@ router
     router
       .get('/audit-logs/:id', [AuditLogsController, 'show'])
       .use(middleware.rbac({ permission: Permission.AUDIT_READ }))
+
+    router
+      .get('/users', [UsersController, 'index'])
+      .use(middleware.rbac({ permission: Permission.USER_MANAGE }))
+
+    router
+      .get('/users/:id', [UsersController, 'show'])
+      .use(middleware.rbac({ permission: Permission.USER_MANAGE }))
+
+    router
+      .post('/users', [UsersController, 'store'])
+      .use(middleware.rbac({ permission: Permission.USER_MANAGE }))
+
+    router
+      .patch('/users/:id', [UsersController, 'update'])
+      .use(middleware.rbac({ permission: Permission.USER_MANAGE }))
+
+    router
+      .put('/users/:id', [UsersController, 'update'])
+      .use(middleware.rbac({ permission: Permission.USER_MANAGE }))
+
+    router
+      .delete('/users/:id', [UsersController, 'destroy'])
+      .use(middleware.rbac({ permission: Permission.USER_MANAGE }))
+
+    // ── Organisation (Owner only: delete current org) ─────────────────────
+    router
+      .delete('/organisations/current', [OrganisationsController, 'destroyCurrent'])
+      .use(middleware.rbac({ permission: Permission.ORG_DELETE }))
   })
   .prefix('/api')
   .use([middleware.auth(), middleware.orgScope()])

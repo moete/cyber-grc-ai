@@ -130,15 +130,20 @@ export function SupplierDetailPage() {
               </div>
               <div>
                 <dt className="text-xs text-slate-400">AI analysis</dt>
-                <dd className="flex items-center gap-2">
-                  <AiStatusBadge status={supplier.aiStatus} />
-                  {supplier.aiRiskScore != null && (
-                    <span className="text-slate-600">Score: {supplier.aiRiskScore}</span>
-                  )}
-                  {supplier.aiError && (
-                    <span className="text-sm text-red-600" title={supplier.aiError}>
-                      {supplier.aiError.slice(0, 60)}…
-                    </span>
+                <dd className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <AiStatusBadge status={supplier.aiStatus} />
+                    {supplier.aiRiskScore != null && (
+                      <span className="text-slate-600">Score: {supplier.aiRiskScore}</span>
+                    )}
+                    {supplier.aiError && (
+                      <span className="text-sm text-red-600" title={supplier.aiError}>
+                        {supplier.aiError.slice(0, 60)}…
+                      </span>
+                    )}
+                  </div>
+                  {supplier.aiAnalysis?.summary && (
+                    <p className="text-sm text-slate-700">{supplier.aiAnalysis.summary}</p>
                   )}
                 </dd>
               </div>
@@ -162,14 +167,21 @@ export function SupplierDetailPage() {
               <h2 className="text-sm font-medium text-slate-500">Audit timeline</h2>
               {Array.isArray(auditLogs) && auditLogs.length > 0 ? (
                 <ul className="mt-3 space-y-3">
-                  {auditLogs.map((log: { id: string; action: string; createdAt: string }) => (
-                    <li key={log.id} className="flex gap-3 border-l-2 border-slate-200 pl-3">
-                      <span className="text-xs text-slate-400">
-                        {new Date(log.createdAt).toLocaleString()}
-                      </span>
-                      <span className="font-medium text-slate-700">{log.action}</span>
-                    </li>
-                  ))}
+                  {auditLogs.map(
+                    (log: { id: string; action: string; createdAt: string; ipAddress?: string }) => (
+                      <li key={log.id} className="flex flex-col gap-1 border-l-2 border-slate-200 pl-3">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-slate-400">
+                            {new Date(log.createdAt).toLocaleString()}
+                          </span>
+                          <span className="font-medium text-slate-700">{log.action}</span>
+                        </div>
+                        {log.ipAddress && (
+                          <span className="text-xs text-slate-400">IP: {log.ipAddress}</span>
+                        )}
+                      </li>
+                    ),
+                  )}
                 </ul>
               ) : (
                 <p className="mt-3 text-sm text-slate-500">No audit entries yet.</p>

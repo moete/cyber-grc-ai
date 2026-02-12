@@ -6,10 +6,19 @@ import {
   SupplierDetailPage,
   SupplierFormPage,
 } from '@/features/suppliers'
+import { UsersListPage } from '@/features/users'
 
 export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/suppliers" replace /> },
   { path: '/login', element: <LoginPage /> },
+  {
+    path: '/users',
+    element: (
+      <ProtectedRoute>
+        <UsersListPage />
+      </ProtectedRoute>
+    ),
+  },
   {
     path: '/suppliers',
     element: (

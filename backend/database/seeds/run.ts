@@ -9,11 +9,15 @@
  * All users have password: password123
  *
  * Usage:
- *   tsx database/seeds/run.ts
+ *   npm run seed   (or: npx tsx database/seeds/run.ts)
+ *
+ * With Docker (same DB as backend):
+ *   docker compose exec backend npm run seed
  */
 import 'dotenv/config'
 import { sql } from 'kysely'
 import { createDb } from '../connection.js'
+import { Roles } from '@shared'
 import { hashPassword } from '@shared/functions/hash'
 
 async function seed() {
@@ -46,46 +50,47 @@ async function seed() {
   console.log(`  ✓ Organisations: ${orgA.name} (${orgA.id}), ${orgB.name} (${orgB.id})`)
 
   // ── Users ──────────────────────────────────────────────────
+  // All same password so one hash can be reused; is_active explicit so login always works.
   const pw = hashPassword('password123')
-
-  const users = await db
-    .insertInto('users')
-    .values([
-      {
-        organization_id: orgA.id,
-        email: 'alice@acme.com',
-        first_name: 'Alice',
-        last_name: 'Martin',
-        password_hash: pw,
-        role: 'Owner',
-      },
-      {
-        organization_id: orgA.id,
-        email: 'bob@acme.com',
-        first_name: 'Bob',
-        last_name: 'Dupont',
-        password_hash: hashPassword('password123'),
-        role: 'Admin',
-      },
-      {
-        organization_id: orgB.id,
-        email: 'charlie@globex.com',
-        first_name: 'Charlie',
-        last_name: 'Bernard',
-        password_hash: hashPassword('password123'),
-        role: 'Analyst',
-      },
-      {
-        organization_id: orgB.id,
-        email: 'diana@globex.com',
-        first_name: 'Diana',
-        last_name: 'Rousseau',
-        password_hash: hashPassword('password123'),
-        role: 'Auditor',
-      },
-    ])
-    .returningAll()
-    .execute()
+  const usersPayload = [
+    {
+      organization_id: orgA.id,
+      email: 'alice@acme.com',
+      first_name: 'Alice',
+      last_name: 'Martin',
+      password_hash: pw,
+      role: Roles.OWNER,
+      is_active: true,
+    },
+    {
+      organization_id: orgA.id,
+      email: 'bob@acme.com',
+      first_name: 'Bob',
+      last_name: 'Dupont',
+      password_hash: pw,
+      role: Roles.ADMIN,
+      is_active: true,
+    },
+    {
+      organization_id: orgB.id,
+      email: 'charlie@globex.com',
+      first_name: 'Charlie',
+      last_name: 'Bernard',
+      password_hash: pw,
+      role: Roles.ANALYST,
+      is_active: true,
+    },
+    {
+      organization_id: orgB.id,
+      email: 'diana@globex.com',
+      first_name: 'Diana',
+      last_name: 'Rousseau',
+      password_hash: pw,
+      role: Roles.AUDITOR,
+      is_active: true,
+    },
+  ]
+  const users = await db.insertInto('users').values(usersPayload).returningAll().execute()
 
   for (const u of users) {
     console.log(`  ✓ User: ${u.first_name} ${u.last_name} (${u.role}) — ${u.email}`)
