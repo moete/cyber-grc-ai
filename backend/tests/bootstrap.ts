@@ -35,4 +35,5 @@ export const configureSuite: Config['configureSuite'] = (suite) => {
   if (['browser', 'functional', 'e2e'].includes(suite.name)) {
     return suite.setup(() => testUtils.httpServer().start());
   }
+  return undefined;
 };

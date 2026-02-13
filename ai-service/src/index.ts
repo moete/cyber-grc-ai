@@ -151,11 +151,14 @@ export class MockClaudeService implements IAiService {
  */
 export class ClaudeService implements IAiService {
   constructor(
-    private readonly apiKey: string,
-    private readonly baseUrl = 'https://api.anthropic.com/v1/messages'
+    private readonly _apiKey: string,
+    private readonly _baseUrl = 'https://api.anthropic.com/v1/messages'
   ) {}
 
-  async analyzeSupplier(input: IAiAnalysisRequest): Promise<IAiAnalysisResponse> {
+  async analyzeSupplier(_input: IAiAnalysisRequest): Promise<IAiAnalysisResponse> {
+    void this._apiKey;
+    void this._baseUrl;
+    void _input;
     // In the test environment we do not call the real API.
     // This implementation is a stub to show how it would look.
     throw new Error(

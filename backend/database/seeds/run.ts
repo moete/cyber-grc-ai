@@ -237,7 +237,8 @@ async function seed() {
     }
   ];
 
-  const suppliers = await db.insertInto('suppliers').values(suppliersData).returningAll().execute();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- seed data literals match DB enum strings
+const suppliers = await db.insertInto('suppliers').values(suppliersData as any).returningAll().execute();
 
   console.log(
     `  ✓ Suppliers: ${suppliers.length} created (${suppliersData.filter((s) => s.organization_id === orgA.id).length} Acme, ${suppliersData.filter((s) => s.organization_id === orgB.id).length} Globex)`

@@ -22,7 +22,7 @@ const loggerConfig = defineConfig({
       }
     }
   }
-});
+}) as { default: string; loggers: Record<string, unknown> };
 
 export default loggerConfig;
 

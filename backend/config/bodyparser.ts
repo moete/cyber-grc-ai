@@ -45,6 +45,6 @@ const bodyParserConfig = defineConfig({
     limit: '20mb',
     types: ['multipart/form-data']
   }
-});
+}) as { allowedMethods: string[]; form: object; json: object; multipart: object };
 
 export default bodyParserConfig;

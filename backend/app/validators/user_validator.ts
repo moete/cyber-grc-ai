@@ -7,7 +7,7 @@ export const createUserValidator = vine.compile(
     email: vine.string().email().trim().normalizeEmail(),
     firstName: vine.string().trim().minLength(1).maxLength(255),
     lastName: vine.string().trim().minLength(1).maxLength(255),
-    password: vine.string().minLength(8, 'Password must be at least 8 characters'),
+    password: vine.string().minLength(8),
     role: roleEnum
   })
 );
