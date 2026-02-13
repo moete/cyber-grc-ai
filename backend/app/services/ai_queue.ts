@@ -97,3 +97,9 @@ export const aiWorker = new Worker<AiJobData>(
   },
   { connection }
 );
+
+/** Close queue and worker so the process can exit  */
+export async function closeAiQueue(): Promise<void> {
+  await aiWorker.close();
+  await aiQueue.close();
+}

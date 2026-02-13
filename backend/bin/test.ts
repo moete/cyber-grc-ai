@@ -44,6 +44,15 @@ new Ignitor(APP_ROOT, { importer: IMPORTER })
   .configure(async (app) => {
     const { runnerHooks, ...config } = await import('../tests/bootstrap.js');
 
+    app.terminating(async () => {
+      try {
+        const { closeAiQueue } = await import('#services/ai_queue');
+        await closeAiQueue();
+      } catch {
+        /* ai_queue not loaded */
+      }
+    });
+
     processCLIArgs(process.argv.splice(2));
     configure({
       ...app.rcFile.tests,
@@ -54,11 +63,7 @@ new Ignitor(APP_ROOT, { importer: IMPORTER })
       }
     });
   })
-  .run(async () => {
-    await run();
-    // Force exit so CI doesn't hang (BullMQ/Redis connections keep the event loop alive)
-    process.exit(process.exitCode ?? 0);
-  })
+  .run(() => run())
   .catch((error) => {
     process.exitCode = 1;
     prettyPrintError(error);

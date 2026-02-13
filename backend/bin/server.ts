@@ -25,6 +25,14 @@ new Ignitor(APP_ROOT, { importer: IMPORTER })
     });
     app.listen('SIGTERM', () => app.terminate());
     app.listenIf(app.managedByPm2, 'SIGINT', () => app.terminate());
+    app.terminating(async () => {
+      try {
+        const { closeAiQueue } = await import('#services/ai_queue');
+        await closeAiQueue();
+      } catch {
+        /* ai_queue not loaded */
+      }
+    });
   })
   .httpServer()
   .start()
