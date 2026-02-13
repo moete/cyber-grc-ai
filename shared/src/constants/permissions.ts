@@ -2,12 +2,10 @@ import { Permission, Roles } from '../enums';
 
 /**
  * Role hierarchy:
- *   Owner   → Everything except audit trail (user management, org deletion, supplier CRUD)
+ *   Owner   → Everything (user management, org deletion, supplier CRUD, audit trail)
  *   Admin   → CRUD suppliers, configure risk policies, read audit log
  *   Analyst → Read suppliers, update risk level, add notes
  *   Auditor → Read-only on everything, full access to audit trail
- *
- * Audit trail is accessible only to Admin and Auditor (spec: "Accessible uniquement aux rôles Admin et Auditor").
  */
 export const ROLE_PERMISSIONS: Record<Roles, Permission[]> = {
   [Roles.OWNER]: [
@@ -23,8 +21,8 @@ export const ROLE_PERMISSIONS: Record<Roles, Permission[]> = {
     Permission.RISK_POLICY_CONFIGURE,
     // Notes
     Permission.NOTES_ADD,
-    // Audit (Owner has "Tout" per spec but in audit trail accesible uniquement aux roles admin et auditor ? )
-   // Permission.AUDIT_READ,
+    // Audit trail
+    Permission.AUDIT_READ,
   ],
 
   [Roles.ADMIN]: [
