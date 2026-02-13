@@ -54,7 +54,11 @@ new Ignitor(APP_ROOT, { importer: IMPORTER })
       }
     });
   })
-  .run(() => run())
+  .run(async () => {
+    await run();
+    // Force exit so CI doesn't hang (BullMQ/Redis connections keep the event loop alive)
+    process.exit(process.exitCode ?? 0);
+  })
   .catch((error) => {
     process.exitCode = 1;
     prettyPrintError(error);
