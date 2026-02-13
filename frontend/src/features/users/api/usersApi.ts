@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPatch, apiPut, apiDelete } from '@/lib/api'
+import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api'
 import type { UserListResponse, UserDetailResponse, IUserPublic } from '@/types'
 
 export function listUsers() {

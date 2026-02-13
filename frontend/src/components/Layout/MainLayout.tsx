@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
-import { useCan } from '@/lib/authorization'
+import { useCan } from '@/lib/useCan'
 import { Permission } from '@shared'
 
 export function MainLayout({ children }: { children: React.ReactNode }) {

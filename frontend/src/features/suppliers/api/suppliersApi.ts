@@ -1,5 +1,4 @@
 import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api'
-import type { ISupplier } from '@shared'
 import type { SupplierListResponse, SupplierDetailResponse } from '@/types'
 
 export interface ListSuppliersParams {
@@ -40,7 +39,7 @@ export function createSupplier(body: CreateSupplierBody) {
   return apiPost<SupplierDetailResponse>('/api/suppliers', body)
 }
 
-export interface UpdateSupplierBody extends Partial<CreateSupplierBody> {}
+export type UpdateSupplierBody = Partial<CreateSupplierBody>
 
 export function updateSupplier(id: string, body: UpdateSupplierBody) {
   return apiPut<SupplierDetailResponse>(`/api/suppliers/${id}`, body)

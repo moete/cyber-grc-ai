@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { useAuthStore } from '@/stores/auth'
 import { hasPermission } from '@shared'
 import type { Roles } from '@shared'
-import { Permission } from '@shared'
+import type { Permission } from '@shared'
 
 /**
  * RBAC: show content only when the current user has one of the allowed roles.
@@ -37,12 +37,3 @@ export function RequirePermission({ permission, children }: RequirePermissionPro
   return <>{children}</>
 }
 
-/**
- * Hook: returns whether the current user has the given permission.
- * Useful for conditional rendering or disabling buttons.
- */
-export function useCan(permission: Permission): boolean {
-  const user = useAuthStore((s) => s.user)
-  const role = user?.role
-  return Boolean(role && hasPermission(role, permission))
-}
