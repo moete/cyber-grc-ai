@@ -70,17 +70,17 @@ jobs:
         env:
           NODE_ENV: test
           PORT: 3334
-          APP_KEY: ci-app-key-min-32-characters-long!!
           HOST: 127.0.0.1
           LOG_LEVEL: info
-          DB_HOST: 127.0.0.1
-          DB_PORT: 5432
-          DB_USER: postgres
-          DB_PASSWORD: postgres
-          DB_DATABASE: postgres
-          JWT_SECRET: ci-jwt-secret-min-32-characters-long!!
-          REDIS_HOST: 127.0.0.1
-          REDIS_PORT: 6379
+          DB_HOST: ${{ vars.DB_HOST || '127.0.0.1' }}
+          DB_PORT: ${{ vars.DB_PORT || '5432' }}
+          DB_USER: ${{ vars.DB_USER || 'postgres' }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'postgres' }}
+          DB_DATABASE: ${{ vars.DB_DATABASE || 'postgres' }}
+          APP_KEY: ${{ secrets.APP_KEY || 'ci-app-key-min-32-characters-long!!' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret-min-32-characters-long!!' }}
+          REDIS_HOST: ${{ vars.REDIS_HOST || '127.0.0.1' }}
+          REDIS_PORT: ${{ vars.REDIS_PORT || '6379' }}
 
       - name: Audit dependencies (block on high/critical)
         run: pnpm audit --audit-level=high --prod

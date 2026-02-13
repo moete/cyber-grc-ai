@@ -21,15 +21,19 @@ Monorepo with:
 From the repo root (requires Docker and Docker Compose):
 
 ```bash
+cp .env.example .env  
 docker compose up --build
 ```
 
-Starts PostgreSQL, Redis, backend, and frontend. Open **http://localhost:5173**. 
-First time only, in another terminal, seed the DB:
+Starts PostgreSQL, Redis, backend, and frontend. Open **http://localhost:5173**. First time only, in another terminal, seed the DB:
 
 ```bash
 docker compose exec backend sh -c "pnpm run db:fresh && pnpm run db:seed"
 ```
+
+**How secrets work:** `docker-compose.yml` reads variables from the root `.env` file (gitignored). The `.env.example` template lists what you need (`DB_PASSWORD`, `APP_KEY`, `JWT_SECRET`). The backend validates all required vars at startup and refuses to run if any are missing. For production, we can use host's secret manager (Docker secrets, Vault, cloud env vars).
+
+For **CI** (push/PR), no `.env` is needed — the workflow uses GitHub Actions secrets. For **local or Docker** on a new machine, you still create a `.env` from `.env.example` and fill it; GitHub does not expose secret values via API, so you cannot “download” `.env` from the repo.
 
 ---
 
@@ -111,4 +115,5 @@ pnpm test:ci     # migrations + seeds + tests
 cd ../frontend
 pnpm lint        # ESLint frontend
 ```
+
 

@@ -1,6 +1,6 @@
 # Security — Cyber GRC Platform
 
-This document describes what we do for security today and what we plan to add .
+This document describes what we do for security today and what we plan to add.
 
 ---
 
@@ -21,7 +21,7 @@ Access is **role-based** and **per organisation**. Each user belongs to one orga
 - **Analyst** — Read suppliers, update risk level, add notes.
 - **Auditor** — Read-only on everything, full access to audit trail.
 
-In the backend, `auth_middleware.ts` checks the JWT and loads the user; `rbac_middleware.ts` checks that the user’s role has the permission required by the route. For resource-level checks we use `requireAccess` / `hasAccess` in `helpers/access.ts`: they verify both the permission and that the resource belongs to the user’s organisation.
+In the backend, `auth_middleware.ts` checks the JWT and loads the user; `rbac_middleware.ts` checks that the user's role has the permission required by the route. For resource-level checks we use `requireAccess` / `hasAccess` in `helpers/access.ts`: they verify both the permission and that the resource belongs to the user's organisation.
 
 ---
 
@@ -33,21 +33,21 @@ We isolate data in two ways.
 All DB access goes through helpers in `scoped_query.ts` that add `WHERE organization_id = :orgId`. Controllers call `requireAccess(auth, resourceOrgId, permission)` before acting on a resource. So even in dev with a Postgres superuser, tenants are separated by application logic.
 
 **2. PostgreSQL RLS (extra safety net)**  
-Migration `005_enable_rls.ts` turns on Row-Level Security for `suppliers`, `audit_logs`, and `users`. The policy ties rows to `current_setting('app.current_org_id')`. The `org_scope_middleware.ts` sets that value at the start of each request. In production, with a non-superuser DB role, RLS blocks any row that doesn’t match the current org, even if the app had a bug. In dev, the superuser bypasses RLS, so isolation there relies only on the application layer.
+Migration `005_enable_rls.ts` turns on Row-Level Security for `suppliers`, `audit_logs`, and `users`. The policy ties rows to `current_setting('app.current_org_id')`. The `org_scope_middleware.ts` sets that value at the start of each request. In production, with a non-superuser DB role, RLS blocks any row that doesn't match the current org, even if the app had a bug. In dev, the superuser bypasses RLS, so isolation there relies only on the application layer.
 
 ---
 
 ## CSRF and XSS
 
-**CSRF** — The JWT is sent in a header, not in a cookie, so classic cross-site form attacks don’t send it. If we add a refresh token in a cookie later, we’ll use `sameSite: 'lax'` (or `'strict'`) so cross-site requests don’t send the cookie.
+**CSRF** — The JWT is sent in a header, not in a cookie, so classic cross-site form attacks don't send it. If we add a refresh token in a cookie later, we'll use `sameSite: 'lax'` (or `'strict'`) so cross-site requests don't send the cookie.
 
-**XSS** — React escapes output by default; we don’t use `dangerouslySetInnerHTML`. All user input is validated on the backend with AdonisJS (Vine) validators. Supplier notes are plain text for now; if we add Markdown later, we’ll sanitise (e.g. DOMPurify or rehype-sanitize) before rendering.
+**XSS** — React escapes output by default; we don't use `dangerouslySetInnerHTML`. All user input is validated on the backend with AdonisJS (Vine) validators. Supplier notes are plain text for now; if we add Markdown later, we'll sanitise (e.g. DOMPurify or rehype-sanitize) before rendering.
 
 ---
 
 ## Rate limiting and security headers
 
-**Rate limiting** — Not implemented yet. We plan to limit login (e.g. 5 attempts per minute per IP), optional limits on AI endpoints, and a general cap per user. We’ll use something like `@adonisjs/limiter` with Redis (or in-memory in dev).
+**Rate limiting** — Not implemented yet. We plan to limit login (e.g. 5 attempts per minute per IP), optional limits on AI endpoints, and a general cap per user. We'll use something like `@adonisjs/limiter` with Redis (or in-memory in dev).
 
 **Security headers** — Not set in code yet. We intend to add (or configure on the reverse proxy) headers such as `Content-Security-Policy`, `Strict-Transport-Security`, `X-Frame-Options`, `X-Content-Type-Options`, and `Referrer-Policy`. See common recommendations for exact values.
 
@@ -55,7 +55,12 @@ Migration `005_enable_rls.ts` turns on Row-Level Security for `suppliers`, `audi
 
 ## Secrets
 
-Secrets live in environment variables (e.g. `JWT_SECRET`, `DB_PASSWORD`, `APP_KEY`). The `.env` file is in `.gitignore` and is never committed. At startup, `backend/start/env.ts` validates required vars with `Env.create()`; if something is missing or invalid, the app won’t start. There are no hardcoded secrets in the repo. In production, use your platform’s secret mechanism (Docker secrets, Vault, CI/CD variables), not files baked into images.
+No secrets are hardcoded anywhere in the repo, including `docker-compose.yml`. All sensitive values (`JWT_SECRET`, `DB_PASSWORD`, `APP_KEY`, future LLM API keys) are injected via environment variables.
+
+- **Local / Docker:** `docker-compose.yml` reads `${VAR}` references from a root `.env` file (gitignored). Copy `.env.example` to `.env` and fill in your values.
+- **Backend validation:** `backend/start/env.ts` uses `Env.create()` with a strict schema. If a required variable is missing or has an invalid format, the app refuses to start (fail-fast).
+- **CI:** Secrets are stored in **GitHub Actions secrets** (Settings > Secrets and variables > Actions) and injected as env vars in workflow steps.
+- **Production:** Use your platform's secret manager (Docker secrets, AWS Secrets Manager, Vault, or cloud-native env vars). Never bake secrets into images or commit them.
 
 ---
 
@@ -67,4 +72,4 @@ We run `pnpm audit --audit-level=high --prod` in CI and it must pass. The `--pro
 
 ## Risk policies (current state)
 
-The RBAC permission `RISK_POLICY_CONFIGURE` exists (Owner and Admin have it), but there is no API yet to configure risk policies (no `/api/risk-policies`). That feature is planned for a later iteration; the permission is already in place so we won’t need to change the auth model when we add it.
+The RBAC permission `RISK_POLICY_CONFIGURE` exists (Owner and Admin have it), but there is no API yet to configure risk policies (no `/api/risk-policies`). That feature is planned for a later iteration; the permission is already in place so we won't need to change the auth model when we add it.
