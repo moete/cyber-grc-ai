@@ -5,7 +5,7 @@ import { clearAuthToken, setAuthToken } from '@/lib/api'
 
 type AuthUser = ILoginResponse['user']
 
-interface AuthState {
+export interface AuthState {
   token: string | null
   user: AuthUser | null
   setAuth: (data: ILoginResponse) => void
@@ -15,7 +15,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set): AuthState => ({
       token: null,
       user: null,
       setAuth: (data) => {
@@ -26,8 +26,8 @@ export const useAuthStore = create<AuthState>()(
         clearAuthToken()
         set({ token: null, user: null })
       },
-      isAuthenticated: () => {
-        const state = useAuthStore.getState()
+      isAuthenticated: (): boolean => {
+        const state = useAuthStore.getState() as AuthState
         return Boolean(state.token)
       },
     }),

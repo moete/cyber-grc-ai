@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore, type AuthState } from '@/stores/auth'
 import { loginRequest } from '@/features/auth/api/authApi'
 import { toast } from 'sonner'
 
@@ -15,7 +15,7 @@ type FormValues = z.infer<typeof schema>
 
 export function LoginPage() {
   const navigate = useNavigate()
-  const setAuth = useAuthStore((s) => s.setAuth)
+  const setAuth = useAuthStore((s: AuthState) => s.setAuth)
 
   const {
     register,

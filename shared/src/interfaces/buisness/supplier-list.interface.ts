@@ -1,5 +1,5 @@
 import { Category, RiskLevel, Status } from '../../enums';
-import { ISupplier } from './supplier.interface';
+import type { ISupplier } from './supplier.interface';
 
 export interface ISupplierListParams {
     page: number;

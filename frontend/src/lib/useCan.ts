@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore, type AuthState } from '@/stores/auth'
 import { hasPermission } from '@shared'
 import type { Permission } from '@shared'
 
@@ -7,7 +7,7 @@ import type { Permission } from '@shared'
  * Useful for conditional rendering or disabling buttons.
  */
 export function useCan(permission: Permission): boolean {
-  const user = useAuthStore((s) => s.user)
+  const user = useAuthStore((s: AuthState) => s.user)
   const role = user?.role
   return Boolean(role && hasPermission(role, permission))
 }

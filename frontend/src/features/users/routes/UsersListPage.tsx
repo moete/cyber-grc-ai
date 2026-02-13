@@ -12,7 +12,7 @@ import {
 import { deleteCurrentOrganisation } from '@/features/users/api/organisationsApi'
 import { MainLayout } from '@/components/Layout/MainLayout'
 import { RequirePermission } from '@/lib/authorization'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore, type AuthState } from '@/stores/auth'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { Permission } from '@shared'
@@ -26,8 +26,8 @@ import {
 export function UsersListPage() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
-  const currentUser = useAuthStore((s) => s.user)
-  const logout = useAuthStore((s) => s.logout)
+  const currentUser = useAuthStore((s: AuthState) => s.user)
+  const logout = useAuthStore((s: AuthState) => s.logout)
 
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingUser, setEditingUser] = useState<IUserPublic | null>(null)

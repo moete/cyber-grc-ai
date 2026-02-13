@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore, type AuthState } from '@/stores/auth'
 import { hasPermission } from '@shared'
 import type { Roles } from '@shared'
 import type { Permission } from '@shared'
@@ -14,7 +14,7 @@ interface RBACProps {
 }
 
 export function RBAC({ allowedRoles, children }: RBACProps) {
-  const user = useAuthStore((s) => s.user)
+  const user = useAuthStore((s: AuthState) => s.user)
   const role = user?.role
   if (!role || !allowedRoles.includes(role)) return null
   return <>{children}</>
@@ -31,7 +31,7 @@ interface RequirePermissionProps {
 }
 
 export function RequirePermission({ permission, children }: RequirePermissionProps) {
-  const user = useAuthStore((s) => s.user)
+  const user = useAuthStore((s: AuthState) => s.user)
   const role = user?.role
   if (!role || !hasPermission(role, permission)) return null
   return <>{children}</>

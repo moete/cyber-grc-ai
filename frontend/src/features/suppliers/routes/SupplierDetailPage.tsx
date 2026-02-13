@@ -9,6 +9,7 @@ import { RequirePermission } from '@/lib/authorization'
 import { useCan } from '@/lib/useCan'
 import { toast } from 'sonner'
 import { ENTITY_TYPES, Permission } from '@shared'
+import type { IAuditLog } from '@shared'
 
 export function SupplierDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -143,8 +144,10 @@ export function SupplierDetailPage() {
                       </span>
                     )}
                   </div>
-                  {supplier.aiAnalysis?.summary && (
-                    <p className="text-sm text-slate-700">{supplier.aiAnalysis.summary}</p>
+                  {supplier.aiAnalysis && typeof (supplier.aiAnalysis as Record<string, unknown>).summary === 'string' && (
+                    <p className="text-slate-700 text-sm">
+                      {String((supplier.aiAnalysis as Record<string, unknown>).summary)}
+                    </p>
                   )}
                 </dd>
               </div>
@@ -168,21 +171,19 @@ export function SupplierDetailPage() {
               <h2 className="text-sm font-medium text-slate-500">Audit timeline</h2>
               {Array.isArray(auditLogs) && auditLogs.length > 0 ? (
                 <ul className="mt-3 space-y-3">
-                  {auditLogs.map(
-                    (log: { id: string; action: string; createdAt: string; ipAddress?: string }) => (
-                      <li key={log.id} className="flex flex-col gap-1 border-l-2 border-slate-200 pl-3">
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs text-slate-400">
-                            {new Date(log.createdAt).toLocaleString()}
-                          </span>
-                          <span className="font-medium text-slate-700">{log.action}</span>
-                        </div>
-                        {log.ipAddress && (
-                          <span className="text-xs text-slate-400">IP: {log.ipAddress}</span>
-                        )}
-                      </li>
-                    ),
-                  )}
+                  {auditLogs.map((log: IAuditLog) => (
+                    <li key={log.id} className="flex flex-col gap-1 border-l-2 border-slate-200 pl-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-slate-400">
+                          {new Date(log.createdAt as string | Date).toLocaleString()}
+                        </span>
+                        <span className="font-medium text-slate-700">{log.action}</span>
+                      </div>
+                      {log.ipAddress && (
+                        <span className="text-xs text-slate-400">IP: {log.ipAddress}</span>
+                      )}
+                    </li>
+                  ))}
                 </ul>
               ) : (
                 <p className="mt-3 text-sm text-slate-500">No audit entries yet.</p>

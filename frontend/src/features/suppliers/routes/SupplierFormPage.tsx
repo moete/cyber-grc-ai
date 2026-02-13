@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { getSupplier, createSupplier, updateSupplier, type CreateSupplierBody } from '@/features/suppliers/api/suppliersApi'
+import type { SupplierDetailResponse } from '@/types'
 import { MainLayout } from '@/components/Layout/MainLayout'
 import { toast } from 'sonner'
 import { Category, RiskLevel, Status } from '@shared'
@@ -26,13 +27,13 @@ export function SupplierFormPage() {
   const queryClient = useQueryClient()
   const isEdit = id && id !== 'new'
 
-  const { data: existing } = useQuery({
+  const { data: existing } = useQuery<SupplierDetailResponse>({
     queryKey: ['supplier', id],
     queryFn: () => getSupplier(id!),
-    enabled: isEdit,
+    enabled: Boolean(id && id !== 'new'),
   })
 
-  const existingSupplier = existing && 'data' in existing ? existing.data : null
+  const existingSupplier = existing?.data ?? null
 
   const createMu = useMutation({
     mutationFn: createSupplier,
