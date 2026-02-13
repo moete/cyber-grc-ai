@@ -1,15 +1,15 @@
-import db from '#services/db'
-import type { AuditAction, EntityType } from '@shared'
+import db from '#services/db';
+import type { AuditAction, EntityType } from '@shared';
 
 interface AuditLogEntry {
-  organizationId: string
-  userId: string
-  action: AuditAction
-  entityType: EntityType
-  entityId: string
-  before: Record<string, unknown> | null
-  after: Record<string, unknown> | null
-  ipAddress: string
+  organizationId: string;
+  userId: string;
+  action: AuditAction;
+  entityType: EntityType;
+  entityId: string;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  ipAddress: string;
 }
 
 /**
@@ -34,7 +34,7 @@ export async function logAudit(entry: AuditLogEntry): Promise<void> {
       entity_id: entry.entityId,
       before: entry.before ? JSON.stringify(entry.before) : null,
       after: entry.after ? JSON.stringify(entry.after) : null,
-      ip_address: entry.ipAddress,
+      ip_address: entry.ipAddress
     })
-    .execute()
+    .execute();
 }

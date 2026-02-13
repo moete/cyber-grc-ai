@@ -4,4 +4,4 @@
  *
  * This file is a placeholder for future validation if needed.
  */
-export {}
+export {};

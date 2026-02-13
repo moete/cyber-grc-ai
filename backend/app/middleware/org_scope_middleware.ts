@@ -1,8 +1,8 @@
-import type { HttpContext } from '@adonisjs/core/http'
-import type { NextFn } from '@adonisjs/core/types/http'
-import { sql } from 'kysely'
-import db from '#services/db'
-import { HttpStatusCode } from '@shared'
+import type { HttpContext } from '@adonisjs/core/http';
+import type { NextFn } from '@adonisjs/core/types/http';
+import { sql } from 'kysely';
+import db from '#services/db';
+import { HttpStatusCode } from '@shared';
 
 /**
  * Organization-scope middleware — sets the PostgreSQL session variable
@@ -22,19 +22,19 @@ export default class OrgScopeMiddleware {
       ctx.response.status(HttpStatusCode.UNAUTHORIZED).send({
         success: false,
         message: 'Organization context missing — authenticate first',
-        statusCode: HttpStatusCode.UNAUTHORIZED,
-      })
-      return
+        statusCode: HttpStatusCode.UNAUTHORIZED
+      });
+      return;
     }
 
     // Set PG session variable for RLS (best-effort, app-level scoping is primary)
     try {
-      await sql`SELECT set_config('app.current_org_id', ${ctx.auth.organizationId}, false)`.execute(db)
+      await sql`SELECT set_config('app.current_org_id', ${ctx.auth.organizationId}, false)`.execute(db);
     } catch {
       // If set_config fails, application-level scoping still protects us.
       // Log the failure for observability in production.
     }
 
-    return next()
+    return next();
   }
 }

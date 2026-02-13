@@ -1,19 +1,19 @@
-import type { HttpContext } from '@adonisjs/core/http'
-import type { NextFn } from '@adonisjs/core/types/http'
-import jwt from 'jsonwebtoken'
-import env from '#start/env'
-import db from '#services/db'
-import type { IApiErrorResponse, IJwtPayload } from '@shared'
-import { HttpStatusCode, type Roles } from '@shared'
+import type { HttpContext } from '@adonisjs/core/http';
+import type { NextFn } from '@adonisjs/core/types/http';
+import jwt from 'jsonwebtoken';
+import env from '#start/env';
+import db from '#services/db';
+import type { IApiErrorResponse, IJwtPayload } from '@shared';
+import { HttpStatusCode, type Roles } from '@shared';
 
 /**
  * Auth state attached to HttpContext after successful JWT verification.
  */
 export interface AuthState {
-  userId: string
-  email: string
-  role: Roles
-  organizationId: string
+  userId: string;
+  email: string;
+  role: Roles;
+  organizationId: string;
 }
 
 /**
@@ -30,29 +30,29 @@ export interface AuthState {
  */
 export default class AuthMiddleware {
   async handle(ctx: HttpContext, next: NextFn) {
-    const authHeader = ctx.request.header('authorization')
+    const authHeader = ctx.request.header('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       ctx.response.status(HttpStatusCode.UNAUTHORIZED).send(<IApiErrorResponse>{
         success: false,
         message: 'Missing or invalid authorization header',
-        statusCode: HttpStatusCode.UNAUTHORIZED,
-      })
-      return
+        statusCode: HttpStatusCode.UNAUTHORIZED
+      });
+      return;
     }
 
-    const token = authHeader.substring(7)
-    let payload: IJwtPayload
+    const token = authHeader.substring(7);
+    let payload: IJwtPayload;
 
     try {
-      payload = jwt.verify(token, env.get('JWT_SECRET')) as IJwtPayload
+      payload = jwt.verify(token, env.get('JWT_SECRET')) as IJwtPayload;
     } catch {
       ctx.response.status(HttpStatusCode.UNAUTHORIZED).send(<IApiErrorResponse>{
         success: false,
         message: 'Invalid or expired token',
-        statusCode: HttpStatusCode.UNAUTHORIZED,
-      })  
-      return  
-    }  
+        statusCode: HttpStatusCode.UNAUTHORIZED
+      });
+      return;
+    }
 
     // Verify user still exists and is active in the DB
     // This catches deactivated users or deleted accounts even if the JWT is valid
@@ -61,15 +61,15 @@ export default class AuthMiddleware {
       .where('id', '=', payload.userId)
       .where('is_active', '=', true)
       .select(['id', 'email', 'role', 'organization_id'])
-      .executeTakeFirst()
+      .executeTakeFirst();
 
     if (!user) {
       ctx.response.status(HttpStatusCode.UNAUTHORIZED).send({
         success: false,
         message: 'User not found or deactivated',
-        statusCode: HttpStatusCode.UNAUTHORIZED,
-      })
-      return
+        statusCode: HttpStatusCode.UNAUTHORIZED
+      });
+      return;
     }
 
     // Attach auth state to context — available to all downstream middleware and controllers
@@ -77,10 +77,10 @@ export default class AuthMiddleware {
       userId: user.id,
       email: user.email,
       role: user.role as Roles,
-      organizationId: user.organization_id,
-    }
+      organizationId: user.organization_id
+    };
 
-    return next()
+    return next();
   }
 }
 
@@ -90,6 +90,6 @@ export default class AuthMiddleware {
  */
 declare module '@adonisjs/core/http' {
   interface HttpContext {
-    auth: AuthState
+    auth: AuthState;
   }
 }

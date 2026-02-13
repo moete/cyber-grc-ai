@@ -1,4 +1,4 @@
-import type { AuditLogRow } from '#types/audit_log'
+import type { AuditLogRow } from '#types/audit_log';
 
 export function toAuditLogResponse(row: AuditLogRow) {
   return {
@@ -11,6 +11,6 @@ export function toAuditLogResponse(row: AuditLogRow) {
     before: row.before,
     after: row.after,
     ipAddress: row.ip_address,
-    createdAt: row.created_at,
-  }
+    createdAt: row.created_at
+  };
 }

@@ -1,5 +1,5 @@
-import type {IAiAnalysisRequest,IAiAnalysisResponse,IAiService} from 'ai-service'
-import { MockClaudeService } from 'ai-service'
+import type { IAiAnalysisRequest, IAiAnalysisResponse, IAiService } from 'ai-service';
+import { MockClaudeService } from 'ai-service';
 
 /**
  * Singleton AI service instance used by the backend.
@@ -11,15 +11,12 @@ import { MockClaudeService } from 'ai-service'
  * The rest of the code depends only on the IAiService interface, so we can
  * later swap this for a real ClaudeService without touching controllers.
  */
-const aiService: IAiService = new MockClaudeService()
+const aiService: IAiService = new MockClaudeService();
 
 export function getAiService(): IAiService {
-  return aiService
+  return aiService;
 }
 
-export async function analyzeSupplierRisk(
-  payload: IAiAnalysisRequest
-): Promise<IAiAnalysisResponse> {
-  return aiService.analyzeSupplier(payload)
+export async function analyzeSupplierRisk(payload: IAiAnalysisRequest): Promise<IAiAnalysisResponse> {
+  return aiService.analyzeSupplier(payload);
 }
-

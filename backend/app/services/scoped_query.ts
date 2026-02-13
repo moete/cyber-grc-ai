@@ -1,6 +1,6 @@
-import type { DeleteQueryBuilder, SelectQueryBuilder, UpdateQueryBuilder } from 'kysely'
-import db from '#services/db'
-import type { Database } from '@shared'
+import type { DeleteQueryBuilder, SelectQueryBuilder, UpdateQueryBuilder } from 'kysely';
+import db from '#services/db';
+import type { Database } from '@shared';
 
 /**
  * Org-scoped query helpers.
@@ -11,9 +11,9 @@ import type { Database } from '@shared'
  * If the scoping column or strategy ever changes, update here only.
  */
 
-type TenantTable = 'suppliers' | 'audit_logs' | 'users'
+type TenantTable = 'suppliers' | 'audit_logs' | 'users';
 
-type TableAlias<DB, T> = T extends keyof DB ? T : never
+type TableAlias<DB, T> = T extends keyof DB ? T : never;
 
 /** SELECT scoped to the user's organisation */
 export function scopedSelect<T extends TenantTable>(
@@ -24,7 +24,7 @@ export function scopedSelect<T extends TenantTable>(
     Database,
     TableAlias<Database, T>,
     Record<string, unknown>
-  >
+  >;
 }
 
 /** UPDATE scoped to the user's organisation */
@@ -37,7 +37,7 @@ export function scopedUpdate<T extends TenantTable>(
     TableAlias<Database, T>,
     TableAlias<Database, T>,
     unknown
-  >
+  >;
 }
 
 /** DELETE scoped to the user's organisation */
@@ -49,10 +49,10 @@ export function scopedDelete<T extends TenantTable>(
     Database,
     TableAlias<Database, T>,
     unknown
-  >
+  >;
 }
 
 /** INSERT that auto-sets organization_id */
 export function scopedInsert<T extends TenantTable>(table: T) {
-  return db.insertInto(table)
+  return db.insertInto(table);
 }

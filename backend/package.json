@@ -20,6 +20,7 @@
     "start": "node build/bin/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "test": "tsx bin/test.ts",
     "test:unit": "tsx bin/test.ts unit",
     "test:functional": "tsx bin/test.ts functional",

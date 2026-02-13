@@ -3,19 +3,15 @@
  * Eliminates the if(!access) return response.status(403)... pattern.
  */
 
-import type { HttpContext } from '@adonisjs/core/http'
-import { canAccessResource, type Permission } from '@shared'
-import ForbiddenException from '#exceptions/forbidden_exception'
+import type { HttpContext } from '@adonisjs/core/http';
+import { canAccessResource, type Permission } from '@shared';
+import ForbiddenException from '#exceptions/forbidden_exception';
 
 /**
  * Returns true/false (useful when you need to branch, not throw).
  */
-export function hasAccess(
-  auth: HttpContext['auth'],
-  resourceOrgId: string,
-  permission: Permission,
-): boolean {
-  return canAccessResource(auth.role, auth.organizationId, resourceOrgId, permission)
+export function hasAccess(auth: HttpContext['auth'], resourceOrgId: string, permission: Permission): boolean {
+  return canAccessResource(auth.role, auth.organizationId, resourceOrgId, permission);
 }
 
 /**
@@ -26,9 +22,9 @@ export function requireAccess(
   auth: HttpContext['auth'],
   resourceOrgId: string,
   permission: Permission,
-  message = 'Forbidden: insufficient permissions',
+  message = 'Forbidden: insufficient permissions'
 ): void {
   if (!canAccessResource(auth.role, auth.organizationId, resourceOrgId, permission)) {
-    throw new ForbiddenException(message)
+    throw new ForbiddenException(message);
   }
 }

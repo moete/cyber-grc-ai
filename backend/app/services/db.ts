@@ -1,7 +1,7 @@
-import { Kysely, PostgresDialect } from 'kysely'
-import pg from 'pg'
-import env from '#start/env'
-import type { Database } from '@shared'
+import { Kysely, PostgresDialect } from 'kysely';
+import pg from 'pg';
+import env from '#start/env';
+import type { Database } from '@shared';
 
 /**
  * Singleton Kysely instance for the AdonisJS application.
@@ -17,9 +17,9 @@ const db = new Kysely<Database>({
       user: env.get('DB_USER'),
       password: env.get('DB_PASSWORD'),
       database: env.get('DB_DATABASE'),
-      max: 10,
-    }),
-  }),
-})
+      max: 10
+    })
+  })
+});
 
-export default db
+export default db;

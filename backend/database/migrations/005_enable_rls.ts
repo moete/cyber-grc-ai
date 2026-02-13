@@ -1,4 +1,4 @@
-import { type Kysely, sql } from 'kysely'
+import { type Kysely, sql } from 'kysely';
 
 /**
  * Defense-in-depth: enable PostgreSQL Row-Level Security on tenant-scoped tables.
@@ -13,37 +13,37 @@ import { type Kysely, sql } from 'kysely'
  */
 export async function up(db: Kysely<any>): Promise<void> {
   // --- suppliers ---
-  await sql`ALTER TABLE suppliers ENABLE ROW LEVEL SECURITY`.execute(db)
+  await sql`ALTER TABLE suppliers ENABLE ROW LEVEL SECURITY`.execute(db);
   await sql`
     CREATE POLICY tenant_isolation_suppliers ON suppliers
       FOR ALL
       USING (organization_id::text = current_setting('app.current_org_id', true))
-  `.execute(db)
+  `.execute(db);
 
   // --- audit_logs ---
-  await sql`ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY`.execute(db)
+  await sql`ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY`.execute(db);
   await sql`
     CREATE POLICY tenant_isolation_audit_logs ON audit_logs
       FOR ALL
       USING (organization_id::text = current_setting('app.current_org_id', true))
-  `.execute(db)
+  `.execute(db);
 
   // --- users ---
-  await sql`ALTER TABLE users ENABLE ROW LEVEL SECURITY`.execute(db)
+  await sql`ALTER TABLE users ENABLE ROW LEVEL SECURITY`.execute(db);
   await sql`
     CREATE POLICY tenant_isolation_users ON users
       FOR ALL
       USING (organization_id::text = current_setting('app.current_org_id', true))
-  `.execute(db)
+  `.execute(db);
 }
 
 export async function down(db: Kysely<any>): Promise<void> {
-  await sql`DROP POLICY IF EXISTS tenant_isolation_users ON users`.execute(db)
-  await sql`ALTER TABLE users DISABLE ROW LEVEL SECURITY`.execute(db)
+  await sql`DROP POLICY IF EXISTS tenant_isolation_users ON users`.execute(db);
+  await sql`ALTER TABLE users DISABLE ROW LEVEL SECURITY`.execute(db);
 
-  await sql`DROP POLICY IF EXISTS tenant_isolation_audit_logs ON audit_logs`.execute(db)
-  await sql`ALTER TABLE audit_logs DISABLE ROW LEVEL SECURITY`.execute(db)
+  await sql`DROP POLICY IF EXISTS tenant_isolation_audit_logs ON audit_logs`.execute(db);
+  await sql`ALTER TABLE audit_logs DISABLE ROW LEVEL SECURITY`.execute(db);
 
-  await sql`DROP POLICY IF EXISTS tenant_isolation_suppliers ON suppliers`.execute(db)
-  await sql`ALTER TABLE suppliers DISABLE ROW LEVEL SECURITY`.execute(db)
+  await sql`DROP POLICY IF EXISTS tenant_isolation_suppliers ON suppliers`.execute(db);
+  await sql`ALTER TABLE suppliers DISABLE ROW LEVEL SECURITY`.execute(db);
 }

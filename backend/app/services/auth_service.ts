@@ -1,5 +1,5 @@
-import db from '#services/db'
-import type { UserWithOrgRow } from '#types/user'
+import db from '#services/db';
+import type { UserWithOrgRow } from '#types/user';
 
 /** Shared user columns used by both login() and me(). */
 const USER_COLUMNS = [
@@ -12,8 +12,8 @@ const USER_COLUMNS = [
   'users.is_active',
   'users.organization_id',
   'users.created_at',
-  'organisations.name as organization_name',
-] as const
+  'organisations.name as organization_name'
+] as const;
 
 /**
  * Find an active user by email (for login).
@@ -25,7 +25,7 @@ export async function findActiveUserByEmail(email: string): Promise<UserWithOrgR
     .where('users.email', '=', email)
     .where('users.is_active', '=', true)
     .select([...USER_COLUMNS])
-    .executeTakeFirst() as Promise<UserWithOrgRow | undefined>
+    .executeTakeFirst() as Promise<UserWithOrgRow | undefined>;
 }
 
 /**
@@ -37,7 +37,7 @@ export async function findUserById(userId: string): Promise<UserWithOrgRow | und
     .innerJoin('organisations', 'organisations.id', 'users.organization_id')
     .where('users.id', '=', userId)
     .select([...USER_COLUMNS])
-    .executeTakeFirst() as Promise<UserWithOrgRow | undefined>
+    .executeTakeFirst() as Promise<UserWithOrgRow | undefined>;
 }
 
 /**
@@ -50,7 +50,7 @@ export async function listUsersByOrganization(organizationId: string): Promise<U
     .where('users.organization_id', '=', organizationId)
     .select([...USER_COLUMNS])
     .orderBy('users.created_at', 'asc')
-    .execute() as Promise<UserWithOrgRow[]>
+    .execute() as Promise<UserWithOrgRow[]>;
 }
 
 /**
@@ -66,6 +66,6 @@ export function toUserResponse(user: UserWithOrgRow) {
     isActive: user.is_active,
     organizationId: user.organization_id,
     organizationName: user.organization_name,
-    createdAt: user.created_at,
-  }
+    createdAt: user.created_at
+  };
 }

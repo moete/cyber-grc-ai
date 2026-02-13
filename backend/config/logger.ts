@@ -1,6 +1,6 @@
-import env from '#start/env'
-import app from '@adonisjs/core/services/app'
-import { defineConfig, targets } from '@adonisjs/core/logger'
+import env from '#start/env';
+import app from '@adonisjs/core/services/app';
+import { defineConfig, targets } from '@adonisjs/core/logger';
 
 const loggerConfig = defineConfig({
   default: 'app',
@@ -18,13 +18,13 @@ const loggerConfig = defineConfig({
         targets: targets()
           .pushIf(!app.inProduction, targets.pretty())
           .pushIf(app.inProduction, targets.file({ destination: 1 }))
-          .toArray(),
-      },
-    },
-  },
-})
+          .toArray()
+      }
+    }
+  }
+});
 
-export default loggerConfig
+export default loggerConfig;
 
 /**
  * Inferring types for the list of loggers you have configured

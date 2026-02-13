@@ -1,8 +1,8 @@
-import type { HttpContext } from '@adonisjs/core/http'
-import { deleted } from '#helpers/responses'
-import { requireAccess } from '#helpers/access'
-import { Permission } from '@shared'
-import { deleteOrganisation } from '#services/organisation_service'
+import type { HttpContext } from '@adonisjs/core/http';
+import { deleted } from '#helpers/responses';
+import { requireAccess } from '#helpers/access';
+import { Permission } from '@shared';
+import { deleteOrganisation } from '#services/organisation_service';
 
 export default class OrganisationsController {
   /**
@@ -10,13 +10,8 @@ export default class OrganisationsController {
    * Removes all users, suppliers and audit logs for that org.
    */
   async destroyCurrent({ auth, response }: HttpContext) {
-    requireAccess(
-      auth,
-      auth.organizationId,
-      Permission.ORG_DELETE,
-      'You do not have permission to delete this organisation'
-    )
-    await deleteOrganisation(auth.organizationId)
-    return deleted(response, 'Organisation deleted')
+    requireAccess(auth, auth.organizationId, Permission.ORG_DELETE, 'You do not have permission to delete this organisation');
+    await deleteOrganisation(auth.organizationId);
+    return deleted(response, 'Organisation deleted');
   }
 }
