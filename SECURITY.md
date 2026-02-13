@@ -1,131 +1,70 @@
-# SECURITY.md — Cyber GRC Platform
+# Security — Cyber GRC Platform
 
-> Ce document décrit les mesures de sécurité **en place** et celles **prévues** pour la plateforme.
-
----
-
-## 1. Authentification & sessions JWT
-
-| Aspect | État | Détail |
-|--------|------|--------|
-| Login / Logout | ✅ Implémenté | `POST /api/auth/login` → JWT signé (HS256). Logout stateless (le client supprime le token). |
-| Transport du token | ✅ Implémenté | Le JWT est renvoyé dans le **corps JSON**. Le frontend le stocke en mémoire (Zustand + `localStorage`) et l'envoie via l'en-tête `Authorization: Bearer`. |
-| Durée de vie | ✅ Implémenté | Configurable via `JWT_EXPIRES_IN` (défaut : 2 h). |
-| Refresh token (cookie httpOnly) | 📋 Prévu | Ajout d'un refresh token stocké dans un **cookie `httpOnly`, `secure`, `sameSite=lax`** via `response.encryptedCookie()` d'AdonisJS. Un endpoint `POST /api/auth/refresh` émettra un nouveau access token. Cela réduit l'exposition du JWT principal. |
+This document describes what we do for security today and what we plan to add .
 
 ---
 
-## 2. RBAC multi-tenant
+## Authentication and sessions
 
-### Modèle hiérarchique
+We use **JWT** for authentication. Login is done via `POST /api/auth/login`; the server returns a signed token (HS256). The frontend keeps it in memory and in `localStorage`, and sends it in the `Authorization: Bearer` header on each request. Token lifetime is configurable with `JWT_EXPIRES_IN` (default 2 hours). Logout is stateless: the client simply drops the token.
 
-```
-Organisation → Utilisateur → Rôle → Permissions
-```
-
-Les rôles et permissions sont définis dans `shared/src/constants/permissions.ts` :
-
-| Rôle | Permissions |
-|------|-------------|
-| **Owner** | Tout : CRUD fournisseurs, gestion utilisateurs, suppression org, risk policies, audit trail |
-| **Admin** | CRUD fournisseurs, configuration risk policies, lecture audit trail |
-| **Analyst** | Lecture fournisseurs, modification risk level, ajout notes |
-| **Auditor** | Lecture seule sur tout, accès complet audit trail |
-
-### Middleware d'autorisation granulaire
-
-- **`auth_middleware.ts`** : vérifie le JWT, charge l'utilisateur, rejette si inactif.
-- **`rbac_middleware.ts`** : vérifie que le rôle possède la permission requise pour la route.
-- **`requireAccess` / `hasAccess`** (`helpers/access.ts`) : contrôle **permission + appartenance à l'organisation** (pas juste "est connecté", mais "a le droit sur cette ressource de cette organisation").
+**Planned:** A refresh token in an `httpOnly`, `secure`, `sameSite=lax` cookie, with a `POST /api/auth/refresh` endpoint to get a new access token. That would reduce how long the main JWT is exposed.
 
 ---
 
-## 3. Isolation multi-tenant / Row-Level Security
+## RBAC and multi-tenancy
 
-L'isolation est assurée par **deux couches complémentaires** :
+Access is **role-based** and **per organisation**. Each user belongs to one organisation and has one role. Permissions are defined in `shared/src/constants/permissions.ts`.
 
-### Couche applicative (défense primaire)
+- **Owner** — Full access: CRUD suppliers, user management, delete organisation, risk policies, audit trail.
+- **Admin** — CRUD suppliers, configure risk policies, read audit trail.
+- **Analyst** — Read suppliers, update risk level, add notes.
+- **Auditor** — Read-only on everything, full access to audit trail.
 
-- Toutes les requêtes SQL passent par des helpers (`scoped_query.ts`) qui ajoutent systématiquement `WHERE organization_id = :orgId`.
-- Les contrôleurs appellent `requireAccess(auth, resourceOrgId, permission)` avant toute opération.
-- La fonction `canAccessResource()` (shared) vérifie à la fois la permission et l'appartenance à l'organisation.
-
-### Couche PostgreSQL — Row-Level Security (défense en profondeur)
-
-- La migration `005_enable_rls.ts` active RLS sur les tables `suppliers`, `audit_logs`, `users`.
-- Politique : `organization_id::text = current_setting('app.current_org_id', true)`.
-- Le middleware `org_scope_middleware.ts` exécute `SET LOCAL app.current_org_id = '<org_id>'` à chaque requête HTTP.
-
-**Pourquoi les deux ?**
-- Le scoping applicatif est la **garantie principale** et fonctionne indépendamment du rôle PostgreSQL (y compris en dev avec le superuser `postgres`).
-- Les policies RLS constituent un **filet de sécurité** supplémentaire en production (avec un rôle DB non-superuser), empêchant toute fuite même en cas de bug applicatif.
-- En développement, le superuser PostgreSQL **bypass** les policies RLS ; l'isolation repose alors uniquement sur la couche applicative.
+In the backend, `auth_middleware.ts` checks the JWT and loads the user; `rbac_middleware.ts` checks that the user’s role has the permission required by the route. For resource-level checks we use `requireAccess` / `hasAccess` in `helpers/access.ts`: they verify both the permission and that the resource belongs to the user’s organisation.
 
 ---
 
-## 4. CSRF / XSS
+## Tenant isolation (Row-Level Security)
 
-### CSRF
+We isolate data in two ways.
 
-- **Risque actuel faible** : le token JWT est transmis via l'en-tête `Authorization`, **pas** via un cookie. Les requêtes CSRF classiques (formulaire tiers) n'incluent pas cet en-tête.
-- **Si refresh token cookie ajouté** : le cookie sera configuré avec `sameSite: 'lax'` (ou `'strict'`), ce qui bloque les requêtes cross-site. L'endpoint `/api/auth/refresh` ne sera utilisé que pour émettre un nouveau access token, sans effet de bord critique.
+**1. Application layer (main guarantee)**  
+All DB access goes through helpers in `scoped_query.ts` that add `WHERE organization_id = :orgId`. Controllers call `requireAccess(auth, resourceOrgId, permission)` before acting on a resource. So even in dev with a Postgres superuser, tenants are separated by application logic.
 
-### XSS
-
-- **React** échappe par défaut tout contenu injecté dans le DOM (pas d'utilisation de `dangerouslySetInnerHTML`).
-- **Inputs** : toutes les entrées utilisateur sont validées côté backend via les validateurs AdonisJS (Vine).
-- **Notes fournisseurs** : actuellement en **texte brut**. Si du Markdown est introduit à l'avenir, le rendu côté front utilisera une bibliothèque de sanitisation (ex. `DOMPurify` ou `rehype-sanitize`) pour éliminer les balises dangereuses avant injection dans le DOM.
+**2. PostgreSQL RLS (extra safety net)**  
+Migration `005_enable_rls.ts` turns on Row-Level Security for `suppliers`, `audit_logs`, and `users`. The policy ties rows to `current_setting('app.current_org_id')`. The `org_scope_middleware.ts` sets that value at the start of each request. In production, with a non-superuser DB role, RLS blocks any row that doesn’t match the current org, even if the app had a bug. In dev, the superuser bypasses RLS, so isolation there relies only on the application layer.
 
 ---
 
-## 5. Rate limiting
+## CSRF and XSS
 
-| Endpoint | État | Plan |
-|----------|------|------|
-| `POST /api/auth/login` | 📋 Prévu | Limiter à **5 tentatives / minute / IP** via le package `@adonisjs/limiter` ou un middleware custom. |
-| Endpoints IA (si ajoutés) | 📋 Prévu | Limiter à **10 requêtes / minute / utilisateur** pour éviter l'abus de coûts API. |
-| API générale | 📋 Prévu | Rate limit global de **100 requêtes / minute / utilisateur** comme filet de sécurité. |
+**CSRF** — The JWT is sent in a header, not in a cookie, so classic cross-site form attacks don’t send it. If we add a refresh token in a cookie later, we’ll use `sameSite: 'lax'` (or `'strict'`) so cross-site requests don’t send the cookie.
 
-> **Implémentation prévue** : utiliser le module `@adonisjs/limiter` avec Redis (les variables `REDIS_HOST` / `REDIS_PORT` sont déjà définies dans `start/env.ts`) ou un store en mémoire pour le développement.
+**XSS** — React escapes output by default; we don’t use `dangerouslySetInnerHTML`. All user input is validated on the backend with AdonisJS (Vine) validators. Supplier notes are plain text for now; if we add Markdown later, we’ll sanitise (e.g. DOMPurify or rehype-sanitize) before rendering.
 
 ---
 
-## 6. Headers de sécurité
+## Rate limiting and security headers
 
-Les headers suivants doivent être configurés sur le backend ou le reverse proxy (Nginx, Caddy, etc.) :
+**Rate limiting** — Not implemented yet. We plan to limit login (e.g. 5 attempts per minute per IP), optional limits on AI endpoints, and a general cap per user. We’ll use something like `@adonisjs/limiter` with Redis (or in-memory in dev).
 
-| Header | Valeur recommandée | État |
-|--------|-------------------|------|
-| `Content-Security-Policy` | `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'` | 📋 À configurer |
-| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` | 📋 À configurer (reverse proxy) |
-| `X-Frame-Options` | `DENY` | 📋 À configurer |
-| `X-Content-Type-Options` | `nosniff` | 📋 À configurer |
-| `Referrer-Policy` | `strict-origin-when-cross-origin` | 📋 À configurer |
-
-> **Plan** : ajouter un middleware AdonisJS global qui positionne ces headers sur chaque réponse, ou les configurer au niveau du reverse proxy en production.
+**Security headers** — Not set in code yet. We intend to add (or configure on the reverse proxy) headers such as `Content-Security-Policy`, `Strict-Transport-Security`, `X-Frame-Options`, `X-Content-Type-Options`, and `Referrer-Policy`. See common recommendations for exact values.
 
 ---
 
-## 7. Gestion des secrets
+## Secrets
 
-- **Variables d'environnement** : toutes les valeurs sensibles (`JWT_SECRET`, `DB_PASSWORD`, `APP_KEY`, futures clés API LLM) sont dans `.env` (**exclu de git** via `.gitignore`).
-- **Validation au boot** : `backend/start/env.ts` utilise `Env.create()` avec un schéma strict. Si une variable obligatoire manque ou a un format invalide, **l'application refuse de démarrer** (fail-fast).
-- **Aucun secret en dur** dans le code source.
-- **En production** : les secrets doivent être injectés via les variables d'environnement du service d'hébergement (Docker secrets, Vault, variables CI/CD), jamais copiés dans l'image.
+Secrets live in environment variables (e.g. `JWT_SECRET`, `DB_PASSWORD`, `APP_KEY`). The `.env` file is in `.gitignore` and is never committed. At startup, `backend/start/env.ts` validates required vars with `Env.create()`; if something is missing or invalid, the app won’t start. There are no hardcoded secrets in the repo. In production, use your platform’s secret mechanism (Docker secrets, Vault, CI/CD variables), not files baked into images.
 
 ---
 
-## 8. Audit des dépendances
+## Dependency audit
 
-| Mesure | État |
-|--------|------|
-| `npm audit` local | ✅ Disponible (`pnpm audit`) |
-| `npm audit` dans la CI | ✅ `pnpm audit --audit-level=high --prod` en étape bloquante. L'option `--prod` limite l'audit aux dépendances de production
-| Politique de mise à jour | 📋 Les dépendances critiques (framework, auth) sont mises à jour en priorité. Les vulnérabilités `high` / `critical` sont traitées sous 48 h. |
-| Dependabot / Renovate | 📋 Prévu : activer les alertes automatiques de mise à jour des dépendances sur le dépôt GitHub. |
+We run `pnpm audit --audit-level=high --prod` in CI and it must pass. The `--prod` flag means we only check production dependencies; dev-only tools (e.g. test runners) are not part of that gate. You can run `pnpm audit` locally anytime. We aim to fix high/critical issues quickly and to prioritise updates for auth and core framework deps. Enabling Dependabot or Renovate for automated update alerts is on the roadmap.
 
 ---
 
-## 9. Risk policies (état actuel)
+## Risk policies (current state)
 
-La permission `RISK_POLICY_CONFIGURE` existe dans le modèle RBAC (attribuée à Owner et Admin), mais **aucune API de configuration de risk policies n'est encore exposée** (pas de route `/api/risk-policies`). Cette fonctionnalité est prévue pour une itération future. Les permissions sont en place pour que l'ajout de cette feature ne nécessite aucun changement au modèle d'autorisation.
+The RBAC permission `RISK_POLICY_CONFIGURE` exists (Owner and Admin have it), but there is no API yet to configure risk policies (no `/api/risk-policies`). That feature is planned for a later iteration; the permission is already in place so we won’t need to change the auth model when we add it.

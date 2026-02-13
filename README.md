@@ -24,7 +24,8 @@ From the repo root (requires Docker and Docker Compose):
 docker compose up --build
 ```
 
-Starts PostgreSQL, Redis, backend, and frontend. Open **http://localhost:5173**. First time only, in another terminal, seed the DB:
+Starts PostgreSQL, Redis, backend, and frontend. Open **http://localhost:5173**. 
+First time only, in another terminal, seed the DB:
 
 ```bash
 docker compose exec backend sh -c "pnpm run db:fresh && pnpm run db:seed"
