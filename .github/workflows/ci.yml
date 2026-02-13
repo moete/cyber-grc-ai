@@ -83,4 +83,4 @@ jobs:
           REDIS_PORT: 6379
 
       - name: Audit dependencies (block on high/critical)
-        run: pnpm audit --audit-level=high
+        run: pnpm audit --audit-level=high --prod

@@ -120,7 +120,7 @@ Les headers suivants doivent être configurés sur le backend ou le reverse prox
 | Mesure | État |
 |--------|------|
 | `npm audit` local | ✅ Disponible (`pnpm audit`) |
-| `npm audit` dans la CI | 📋 Prévu : ajouter `pnpm audit --audit-level=high` comme étape bloquante dans le pipeline CI. |
+| `npm audit` dans la CI | ✅ `pnpm audit --audit-level=high --prod` en étape bloquante. L'option `--prod` limite l'audit aux dépendances de production
 | Politique de mise à jour | 📋 Les dépendances critiques (framework, auth) sont mises à jour en priorité. Les vulnérabilités `high` / `critical` sont traitées sous 48 h. |
 | Dependabot / Renovate | 📋 Prévu : activer les alertes automatiques de mise à jour des dépendances sur le dépôt GitHub. |
 
