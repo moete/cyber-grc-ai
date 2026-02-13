@@ -21,17 +21,20 @@ Monorepo with:
 From the repo root (requires Docker and Docker Compose):
 
 ```bash
-cp .env.example .env   # then fill in the values
+cp .env.example .env 
 docker compose up --build
 ```
 
-Starts PostgreSQL, Redis, backend, and frontend. Open **http://localhost:5173**. First time only, in another terminal, seed the DB:
+This will start PostgreSQL, Redis, backend, and frontend.
+Open **http://localhost:5173**. 
+First time only, in another terminal, seed the DB:
 
 ```bash
-docker compose exec backend sh -c "pnpm run db:fresh && pnpm run db:seed"
+docker compose exec backend sh -c "pnpm run setup:fresh"
 ```
 
-**How secrets work:** `docker-compose.yml` reads variables from the root `.env` file (gitignored). The `.env.example` template lists what you need (`DB_PASSWORD`, `APP_KEY`, `JWT_SECRET`). The backend validates all required vars at startup and refuses to run if any are missing. On a new machine: `cp .env.example .env`, fill in the values, and you're good. For productionwe can use  (Docker secrets, Vault, cloud env vars).
+
+**How secrets work:** `docker-compose.yml` reads variables from the root `.env` file (gitignored). The `.env.example` template lists what you need (`DB_PASSWORD`, `APP_KEY`, `JWT_SECRET`). The backend validates all required vars at startup and refuses to run if any are missing. On a new machine: `cp .env.example .env`, fill in the values, and you're good. For production we can use  (Docker secrets, Vault, cloud env vars).
 
 ---
 
@@ -51,7 +54,7 @@ From the repo root:
 
 ```bash
 cd backend
-cp .env.example .env          # if the file exists, otherwise create .env
+cp .env.example .env 
 ```
 
 Edit `.env` to match your local PostgreSQL / Redis:
