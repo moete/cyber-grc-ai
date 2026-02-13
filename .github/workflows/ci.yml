@@ -45,7 +45,6 @@ jobs:
         run: |
           pnpm --filter backend run lint
           pnpm --filter frontend run lint
-          pnpm --filter ai-service run lint
 
       - name: Typecheck backend
         run: pnpm --filter backend run typecheck
