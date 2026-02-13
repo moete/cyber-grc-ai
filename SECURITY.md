@@ -59,7 +59,7 @@ No secrets are hardcoded anywhere in the repo, including `docker-compose.yml`. A
 
 - **Local / Docker:** `docker-compose.yml` reads `${VAR}` references from a root `.env` file (gitignored). Copy `.env.example` to `.env` and fill in your values.
 - **Backend validation:** `backend/start/env.ts` uses `Env.create()` with a strict schema. If a required variable is missing or has an invalid format, the app refuses to start (fail-fast).
-- **CI:** Secrets are stored in **GitHub Actions secrets** (Settings > Secrets and variables > Actions) and injected as env vars in workflow steps.
+- **CI:** The workflow currently hardcodes throwaway test values (e.g. `ci-jwt-secret-...`, `postgres`). These are not real secrets — they only exist for the ephemeral CI containers. For better security, these can be replaced with **GitHub Actions secrets** (Settings > Secrets and variables > Actions) so that no credential appears in the workflow file, even test ones. (they are alredy there but no time left to use them)
 - **Production:** Use your platform's secret manager (Docker secrets, AWS Secrets Manager, Vault, or cloud-native env vars). Never bake secrets into images or commit them.
 
 ---

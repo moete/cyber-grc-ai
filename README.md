@@ -11,8 +11,8 @@ Monorepo with:
 
 - **Node.js** 20+
 - **pnpm** 9+ (`npm install -g pnpm`)
-- **PostgreSQL** (local)  database user/password you control
-- **Redis** (local)  default port `6379` is fine
+- **PostgreSQL** (local) — database user/password you control
+- **Redis** (local) — default port `6379` is fine
 
 ---
 
@@ -21,7 +21,7 @@ Monorepo with:
 From the repo root (requires Docker and Docker Compose):
 
 ```bash
-cp .env.example .env  
+cp .env.example .env   # then fill in the values
 docker compose up --build
 ```
 
@@ -31,9 +31,7 @@ Starts PostgreSQL, Redis, backend, and frontend. Open **http://localhost:5173**.
 docker compose exec backend sh -c "pnpm run db:fresh && pnpm run db:seed"
 ```
 
-**How secrets work:** `docker-compose.yml` reads variables from the root `.env` file (gitignored). The `.env.example` template lists what you need (`DB_PASSWORD`, `APP_KEY`, `JWT_SECRET`). The backend validates all required vars at startup and refuses to run if any are missing. For production, we can use host's secret manager (Docker secrets, Vault, cloud env vars).
-
-For **CI** (push/PR), no `.env` is needed — the workflow uses GitHub Actions secrets. For **local or Docker** on a new machine, you still create a `.env` from `.env.example` and fill it; GitHub does not expose secret values via API, so you cannot “download” `.env` from the repo.
+**How secrets work:** `docker-compose.yml` reads variables from the root `.env` file (gitignored). The `.env.example` template lists what you need (`DB_PASSWORD`, `APP_KEY`, `JWT_SECRET`). The backend validates all required vars at startup and refuses to run if any are missing. On a new machine: `cp .env.example .env`, fill in the values, and you're good. For production, use your host's secret manager (Docker secrets, Vault, cloud env vars).
 
 ---
 
@@ -77,7 +75,7 @@ pnpm dev
 
 ---
 
-## 5. Frontend  start UI
+## 5. Frontend — start UI
 
 In another terminal, from the repo root:
 
@@ -115,5 +113,3 @@ pnpm test:ci     # migrations + seeds + tests
 cd ../frontend
 pnpm lint        # ESLint frontend
 ```
-
-
