@@ -37,10 +37,10 @@ export function SupplierFormPage() {
 
   const createMu = useMutation({
     mutationFn: createSupplier,
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['suppliers'] })
-      toast.success('Supplier created')
-      navigate('/suppliers')
+      toast.success('Supplier created. AI analysis in progress.')
+      navigate(`/suppliers/${res.data.id}`)
     },
     onError: (e: Error) => toast.error(e.message),
   })
@@ -48,11 +48,11 @@ export function SupplierFormPage() {
   const updateMu = useMutation({
     mutationFn: ({ id: sid, body }: { id: string; body: CreateSupplierBody }) =>
       updateSupplier(sid, body),
-    onSuccess: () => {
+    onSuccess: (_, { id: sid }) => {
       queryClient.invalidateQueries({ queryKey: ['suppliers'] })
-      if (id) queryClient.invalidateQueries({ queryKey: ['supplier', id] })
-      toast.success('Supplier updated')
-      navigate('/suppliers')
+      if (sid) queryClient.invalidateQueries({ queryKey: ['supplier', sid] })
+      toast.success('Supplier updated. AI analysis in progress.')
+      navigate(`/suppliers/${sid}`)
     },
     onError: (e: Error) => toast.error(e.message),
   })

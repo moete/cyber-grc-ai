@@ -1,22 +1,25 @@
 import type { IAiAnalysisRequest, IAiAnalysisResponse, IAiService } from 'ai-service';
-import { MockClaudeService } from 'ai-service';
+import { ClaudeService } from 'ai-service';
+import env from '#start/env';
 
-/**
- * Singleton AI service instance used by the backend.
- *
- * For the take‑home, this is a MockClaudeService implementation that:
- * - Simulates latency and occasional failures
- * - Produces deterministic scores and narratives from supplier data
- *
- * The rest of the code depends only on the IAiService interface, so we can
- * later swap this for a real ClaudeService without touching controllers.
- */
-const aiService: IAiService = new MockClaudeService();
+let aiService: IAiService | null = null;
 
-export function getAiService(): IAiService {
+function getOrCreateAiService(): IAiService {
+  if (aiService) return aiService;
+  const apiKey = env.get('ANTHROPIC_API_KEY');
+  if (!apiKey || apiKey.length === 0) {
+    throw new Error(
+      'ANTHROPIC_API_KEY is required for AI analysis. Add it to your backend .env file (see .env.example).'
+    );
+  }
+  aiService = new ClaudeService(apiKey);
   return aiService;
 }
 
+export function getAiService(): IAiService {
+  return getOrCreateAiService();
+}
+
 export async function analyzeSupplierRisk(payload: IAiAnalysisRequest): Promise<IAiAnalysisResponse> {
-  return aiService.analyzeSupplier(payload);
+  return getOrCreateAiService().analyzeSupplier(payload);
 }

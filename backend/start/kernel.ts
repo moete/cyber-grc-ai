@@ -10,7 +10,7 @@
 
 import router from '@adonisjs/core/services/router';
 import server from '@adonisjs/core/services/server';
-import '#services/ai_queue';
+// ai_queue is loaded lazily on first supplier create/update (no Redis required at boot)
 
 /**
  * The error handler is used to convert an exception

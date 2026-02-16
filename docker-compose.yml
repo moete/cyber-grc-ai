@@ -1,19 +1,17 @@
-
-
 services:
   postgres:
     image: postgres:16-alpine
     container_name: postgres-cyber-grc
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cyber_grc
     ports:
       - "5432:5432"
     volumes:
       - postgres_cyber_grc_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -46,16 +44,22 @@ services:
       PORT: 3333
       LOG_LEVEL: info
       APP_NAME: cyber-grc
-      APP_KEY: ${APP_KEY}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-2h}
+      APP_KEY: dev-app-key-change-me
+
+      # Required by backend/start/env.ts — dev-only values; override in production
+      JWT_SECRET: dev-jwt-secret-change-in-production-min-32-chars
+      JWT_EXPIRES_IN: 2h
+
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_DATABASE: ${DB_DATABASE}
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: cyber_grc
+
       REDIS_HOST: redis
       REDIS_PORT: 6379
+
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     ports:
       - "3333:3333"
 
