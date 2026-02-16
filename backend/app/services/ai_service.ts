@@ -21,3 +21,11 @@ export function getAiService(): IAiService {
 export async function analyzeSupplierRisk(payload: IAiAnalysisRequest): Promise<IAiAnalysisResponse> {
   return getOrCreateAiService().analyzeSupplier(payload);
 }
+
+/**
+ * Override the singleton for testing. Pass `null` to reset.
+ * Only call this in test files.
+ */
+export function _setAiServiceForTesting(service: IAiService | null): void {
+  aiService = service;
+}

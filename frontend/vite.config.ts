@@ -8,6 +8,14 @@ function pathResolve(dir: string) {
 }
 
 export default defineConfig({
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3333',
+        changeOrigin: true,
+      },
+    },
+  },
   plugins: [
     react({
       exclude: [/\/node_modules\//, /\.vite\/deps\//],

@@ -1,4 +1,5 @@
 import { test } from '@japa/runner';
+import { login } from '../helpers/auth.js';
 
 /**
  * Integration test to verify multi-tenant isolation:
@@ -9,15 +10,6 @@ import { test } from '@japa/runner';
  * - Alice (Owner, Acme)
  * - Charlie (Analyst, Globex)
  */
-
-async function login(client: any, email: string, password = 'password123'): Promise<string> {
-  const response = await client.post('/api/auth/login').json({ email, password });
-
-  response.assertStatus(200);
-
-  const body = response.body();
-  return body.data.token as string;
-}
 
 test.group('Multi-tenant isolation', () => {
   test('User from org B cannot read supplier from org A', async ({ client }) => {

@@ -7,14 +7,17 @@
   "types": "src/index.ts",
   "scripts": {
     "build": "tsc -b",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
     "shared": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^24.10.1",
     "typescript": "~5.9.3",
-    "@types/node": "^24.10.1"
+    "vitest": "^4.0.18"
   }
 }

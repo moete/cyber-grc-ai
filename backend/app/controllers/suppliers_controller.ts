@@ -108,19 +108,38 @@ export default class SuppliersController {
 
     const updateValues = buildSupplierUpdateValues(data, fullUpdate, canRisk, canNotes);
 
+    // Only re-trigger AI analysis when risk-relevant fields actually changed
+    const RISK_FIELDS: Array<[string, keyof typeof existing]> = [
+      ['name', 'name'],
+      ['domain', 'domain'],
+      ['category', 'category'],
+      ['notes', 'notes']
+    ];
+    const riskRelevantChanged = RISK_FIELDS.some(([updateKey, dbKey]) => {
+      return updateKey in updateValues && updateValues[updateKey] !== existing[dbKey];
+    });
+
+    const aiFields = riskRelevantChanged
+      ? {
+          ai_status: AiAnalysisStatus.PENDING,
+          ai_last_requested_at: new Date(),
+          ai_last_completed_at: null,
+          ai_error: null
+        }
+      : {};
+
     const [updated] = await scopedUpdate('suppliers', auth.organizationId)
       .set({
         ...updateValues,
-        ai_status: AiAnalysisStatus.PENDING,
-        ai_last_requested_at: new Date(),
-        ai_last_completed_at: null,
-        ai_error: null
+        ...aiFields
       })
       .where('id', '=', params.id)
       .returningAll()
       .execute();
 
-    await enqueueAiJob({ supplierId: updated.id, organizationId: auth.organizationId });
+    if (riskRelevantChanged) {
+      await enqueueAiJob({ supplierId: updated.id, organizationId: auth.organizationId });
+    }
 
     await this.audit(auth, AuditAction.UPDATE, params.id, existing, updated, request.ip());
 

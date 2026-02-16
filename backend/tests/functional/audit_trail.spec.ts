@@ -1,5 +1,6 @@
 import { test } from '@japa/runner';
 import { AuditAction, ENTITY_TYPES } from '@shared';
+import { login } from '../helpers/auth.js';
 
 /**
  * E2E (bonus): Login → create supplier → verify audit trail.
@@ -7,12 +8,6 @@ import { AuditAction, ENTITY_TYPES } from '@shared';
  * Business invariant: every supplier creation must produce exactly one
  * CREATE audit log entry for that entity, scoped to the user's organisation.
  */
-
-async function login(client: any, email: string, password = 'password123'): Promise<string> {
-  const response = await client.post('/api/auth/login').json({ email, password });
-  response.assertStatus(200);
-  return response.body().data.token as string;
-}
 
 test.group('Audit trail E2E', () => {
   test('creating a supplier creates an audit log entry', async ({ client }) => {
