@@ -8,9 +8,7 @@ function getOrCreateAiService(): IAiService {
   if (aiService) return aiService;
   const apiKey = env.get('ANTHROPIC_API_KEY');
   if (!apiKey || apiKey.length === 0) {
-    throw new Error(
-      'ANTHROPIC_API_KEY is required for AI analysis. Add it to your backend .env file (see .env.example).'
-    );
+    throw new Error('ANTHROPIC_API_KEY is required for AI analysis. Add it to your backend .env file (see .env.example).');
   }
   aiService = new ClaudeService(apiKey);
   return aiService;
