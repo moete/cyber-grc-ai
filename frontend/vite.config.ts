@@ -8,9 +8,13 @@ function pathResolve(dir: string) {
 }
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      exclude: [/\/node_modules\//, /\.vite\/deps\//],
+    }),
+  ],
   envDir: './src/config',
-  cacheDir: '.vite',
+  cacheDir: 'node_modules/.vite',
   build: {
     outDir: '../../dist/packages/frontend',
   },

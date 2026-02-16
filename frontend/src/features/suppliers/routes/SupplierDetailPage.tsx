@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { getSupplier, deleteSupplier } from '@/features/suppliers/api/suppliersApi'
@@ -8,13 +9,17 @@ import { MainLayout } from '@/components/Layout/MainLayout'
 import { RequirePermission } from '@/lib/authorization'
 import { useCan } from '@/lib/useCan'
 import { toast } from 'sonner'
-import { ENTITY_TYPES, Permission } from '@shared'
-import type { IAuditLog } from '@shared'
+import { ENTITY_TYPES, Permission, AiAnalysisStatus } from '@shared'
+import type { IAuditLog, IAiAnalysis } from '@shared'
+
+const POLL_INTERVAL_MS = 5000
+const POLL_TIMEOUT_MS = 60_000
 
 export function SupplierDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const pollingStartedRef = useRef<number | null>(null)
 
   const {
     data: supplierRes,
@@ -25,6 +30,17 @@ export function SupplierDetailPage() {
     queryKey: ['supplier', id],
     queryFn: () => getSupplier(id!),
     enabled: Boolean(id),
+    refetchInterval: (query) => {
+      const status = query.state.data?.data?.aiStatus
+      if (status !== AiAnalysisStatus.PENDING && status !== AiAnalysisStatus.PROCESSING) {
+        pollingStartedRef.current = null
+        return false
+      }
+      const now = Date.now()
+      if (pollingStartedRef.current === null) pollingStartedRef.current = now
+      if (now - pollingStartedRef.current > POLL_TIMEOUT_MS) return false
+      return POLL_INTERVAL_MS
+    },
   })
 
   const canViewAudit = useCan(Permission.AUDIT_READ)
@@ -132,23 +148,67 @@ export function SupplierDetailPage() {
               </div>
               <div>
                 <dt className="text-xs text-slate-400">AI analysis</dt>
-                <dd className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
+                <dd className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <AiStatusBadge status={supplier.aiStatus} />
                     {supplier.aiRiskScore != null && (
-                      <span className="text-slate-600">Score: {supplier.aiRiskScore}</span>
+                      <span className="text-slate-600">Score: {supplier.aiRiskScore}/100</span>
+                    )}
+                    {(supplier.aiStatus === AiAnalysisStatus.PENDING || supplier.aiStatus === AiAnalysisStatus.PROCESSING) && (
+                      <span className="text-xs text-slate-500">Checking every 5s (stops after 1 min)…</span>
                     )}
                     {supplier.aiError && (
                       <span className="text-sm text-red-600" title={supplier.aiError}>
-                        {supplier.aiError.slice(0, 60)}…
+                        {supplier.aiError.slice(0, 60)}{supplier.aiError.length > 60 ? '…' : ''}
                       </span>
                     )}
                   </div>
-                  {supplier.aiAnalysis && typeof (supplier.aiAnalysis as Record<string, unknown>).summary === 'string' && (
-                    <p className="text-slate-700 text-sm">
-                      {String((supplier.aiAnalysis as Record<string, unknown>).summary)}
-                    </p>
-                  )}
+                  {supplier.aiStatus === AiAnalysisStatus.COMPLETE && supplier.aiAnalysis && (() => {
+                    const a = supplier.aiAnalysis as unknown as IAiAnalysis | null
+                    if (!a) return null
+                    return (
+                      <div className="mt-2 space-y-3 rounded-lg border border-slate-100 bg-slate-50/50 p-3 text-sm">
+                        {typeof a.summary === 'string' && (
+                          <p className="text-slate-700">{a.summary}</p>
+                        )}
+                        {Array.isArray(a.riskFactors) && a.riskFactors.length > 0 && (
+                          <div>
+                            <h4 className="mb-1 font-medium text-slate-600">Risk factors</h4>
+                            <ul className="list-inside list-disc space-y-1 text-slate-600">
+                              {a.riskFactors.map((f, i) => (
+                                <li key={i}>
+                                  <span className="font-medium text-slate-700">{f.factor}</span>
+                                  {f.riskLevel && (
+                                    <span className="ml-1 text-xs text-slate-500">({f.riskLevel})</span>
+                                  )}
+                                  {f.description && ` — ${f.description}`}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {Array.isArray(a.recommendations) && a.recommendations.length > 0 && (
+                          <div>
+                            <h4 className="mb-1 font-medium text-slate-600">Recommendations</h4>
+                            <ul className="list-inside list-disc space-y-1 text-slate-600">
+                              {a.recommendations.map((r, i) => (
+                                <li key={i}>{r}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {(a.modelVersion || a.analyzedAt) && (
+                          <p className="text-xs text-slate-400">
+                            {a.modelVersion && <span>Model: {a.modelVersion}</span>}
+                            {a.modelVersion && a.analyzedAt && ' · '}
+                            {a.analyzedAt && (
+                              <span>Analyzed: {new Date(a.analyzedAt).toLocaleString()}</span>
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </dd>
               </div>
               {supplier.contractEndDate && (

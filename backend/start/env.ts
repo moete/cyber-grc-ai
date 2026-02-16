@@ -23,6 +23,8 @@ export default await Env.create(new URL('../', import.meta.url), {
   JWT_SECRET: Env.schema.string(),
   JWT_EXPIRES_IN: Env.schema.string.optional(),
 
+  ANTHROPIC_API_KEY: Env.schema.string.optional(),
+
   REDIS_HOST: Env.schema.string.optional(),
   REDIS_PORT: Env.schema.number.optional(),
 

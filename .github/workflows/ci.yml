@@ -81,6 +81,7 @@ jobs:
           DB_DATABASE: postgres
           REDIS_HOST: 127.0.0.1
           REDIS_PORT: 6379
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: Audit dependencies (block on high/critical)
         run: pnpm audit --audit-level=high --prod
